@@ -1,0 +1,9 @@
+{"vcs1":{"timestamp_begin":1787997935.948054049, "rt":1.83, "ut":0.22, "st":0.04}}
+{"vcselab":{"timestamp_begin":1787997937.806286993, "rt":1.63, "ut":0.12, "st":0.03}}
+{"link":{"timestamp_begin":1787997939.456991408, "rt":0.11, "ut":0.08, "st":0.03}}
+{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1787997935.761892812}
+{"VCS_COMP_START_TIME": 1787997935.761892812}
+{"VCS_COMP_END_TIME": 1787997939.635032768}
+{"VCS_USER_OPTIONS": "-full64 -sverilog -debug_access+all /home/student/Documents/proj_dir/rtl/interconnect/priority_encoder.v /home/student/Documents/proj_dir/rtl/interconnect/arbiter.v axi_interconnect.v axi_interconnect_wrap_4x9.v tb_axi_interconnect_4x9.sv -o simv"}
+{"vcs1": {"peak_mem": 377728}}
+{"vcselab": {"peak_mem": 260300}}
