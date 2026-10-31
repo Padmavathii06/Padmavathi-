@@ -1,7 +1,0 @@
-Command exited with non-zero status 255
-{"vcs1":{"timestamp_begin":1787999847.896535439, "rt":1.31, "ut":0.04, "st":0.01}}
-{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1787999847.744895482}
-{"VCS_COMP_START_TIME": 1787999847.744895482}
-{"VCS_COMP_END_TIME": 1787999849.232431888}
-{"VCS_USER_OPTIONS": "-full64 -sverilog ../rtl/interconnect/axi_lite_test_ip.v ../tb/tb_axi_lite_test_ip.sv -o simv"}
-{"vcs1": {"peak_mem": 356276}}

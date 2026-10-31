@@ -1,4 +1,12 @@
-```systemverilog
+// =============================================================================
+// SUPERSEDED - reference only, not built by the Makefile.
+//
+// The SoC specification requires a 4x4 interconnect (4 manager ports and
+// 4 subordinate ports); see doc/interconnect_4x4_decision.md.  This 4x9
+// testbench is kept only as historical reference.  The active, self-checking
+// testbench is tb/tb_axi_interconnect_4x4.sv (make interconnect).
+// =============================================================================
+
 `timescale 1ns / 1ps
 
 module tb_axi_interconnect_wrap_4x9;
@@ -26,23 +34,23 @@ module tb_axi_interconnect_wrap_4x9;
     reg  [7:0]            s00_axi_awlen;
     reg  [2:0]            s00_axi_awsize;
     reg  [1:0]            s00_axi_awburst;
-    reg                    s00_axi_awlock;
-    reg  [3:0]             s00_axi_awcache;
-    reg  [2:0]             s00_axi_awprot;
-    reg  [3:0]             s00_axi_awqos;
+    reg                   s00_axi_awlock;
+    reg  [3:0]            s00_axi_awcache;
+    reg  [2:0]            s00_axi_awprot;
+    reg  [3:0]            s00_axi_awqos;
     reg  [AWUSER_WIDTH-1:0] s00_axi_awuser;
-    reg                     s00_axi_awvalid;
-    wire                    s00_axi_awready;
+    reg                   s00_axi_awvalid;
+    wire                  s00_axi_awready;
 
-    reg  [DATA_WIDTH-1:0]   s00_axi_wdata;
-    reg  [STRB_WIDTH-1:0]   s00_axi_wstrb;
-    reg                     s00_axi_wlast;
-    reg  [WUSER_WIDTH-1:0]  s00_axi_wuser;
-    reg                     s00_axi_wvalid;
-    wire                    s00_axi_wready;
+    reg  [DATA_WIDTH-1:0] s00_axi_wdata;
+    reg  [STRB_WIDTH-1:0] s00_axi_wstrb;
+    reg                   s00_axi_wlast;
+    reg  [WUSER_WIDTH-1:0] s00_axi_wuser;
+    reg                   s00_axi_wvalid;
+    wire                  s00_axi_wready;
 
     wire [ID_WIDTH-1:0]     s00_axi_bid;
-    wire [1:0]              s00_axi_bresp;
+    wire [1:0]             s00_axi_bresp;
     wire [BUSER_WIDTH-1:0] s00_axi_buser;
     wire                    s00_axi_bvalid;
     reg                     s00_axi_bready;
@@ -61,17 +69,16 @@ module tb_axi_interconnect_wrap_4x9;
     wire                    s00_axi_arready;
 
     wire [ID_WIDTH-1:0]     s00_axi_rid;
-    wire [DATA_WIDTH-1:0]  s00_axi_rdata;
+    wire [DATA_WIDTH-1:0]   s00_axi_rdata;
     wire [1:0]              s00_axi_rresp;
     wire                    s00_axi_rlast;
-    wire [RUSER_WIDTH-1:0] s00_axi_ruser;
+    wire [RUSER_WIDTH-1:0]  s00_axi_ruser;
     wire                    s00_axi_rvalid;
     reg                     s00_axi_rready;
 
 
     // ============================================================
-    // S01-S03
-    // For unused slave interfaces, tie inputs to zero.
+    // S01
     // ============================================================
 
     wire [ID_WIDTH-1:0]   s01_axi_awid = 0;
@@ -79,10 +86,10 @@ module tb_axi_interconnect_wrap_4x9;
     wire [7:0]            s01_axi_awlen = 0;
     wire [2:0]            s01_axi_awsize = 0;
     wire [1:0]            s01_axi_awburst = 0;
-    wire                   s01_axi_awlock = 0;
-    wire [3:0]             s01_axi_awcache = 0;
-    wire [2:0]             s01_axi_awprot = 0;
-    wire [3:0]             s01_axi_awqos = 0;
+    wire                  s01_axi_awlock = 0;
+    wire [3:0]            s01_axi_awcache = 0;
+    wire [2:0]            s01_axi_awprot = 0;
+    wire [3:0]            s01_axi_awqos = 0;
     wire [AWUSER_WIDTH-1:0] s01_axi_awuser = 0;
     wire                    s01_axi_awvalid = 0;
     wire                    s01_axi_awready;
@@ -105,10 +112,10 @@ module tb_axi_interconnect_wrap_4x9;
     wire [7:0]            s01_axi_arlen = 0;
     wire [2:0]            s01_axi_arsize = 0;
     wire [1:0]            s01_axi_arburst = 0;
-    wire                   s01_axi_arlock = 0;
-    wire [3:0]             s01_axi_arcache = 0;
-    wire [2:0]             s01_axi_arprot = 0;
-    wire [3:0]             s01_axi_arqos = 0;
+    wire                  s01_axi_arlock = 0;
+    wire [3:0]            s01_axi_arcache = 0;
+    wire [2:0]            s01_axi_arprot = 0;
+    wire [3:0]            s01_axi_arqos = 0;
     wire [ARUSER_WIDTH-1:0] s01_axi_aruser = 0;
     wire                    s01_axi_arvalid = 0;
     wire                    s01_axi_arready;
@@ -122,16 +129,19 @@ module tb_axi_interconnect_wrap_4x9;
     wire                   s01_axi_rready = 1;
 
 
+    // ============================================================
     // S02
+    // ============================================================
+
     wire [ID_WIDTH-1:0]   s02_axi_awid = 0;
     wire [ADDR_WIDTH-1:0] s02_axi_awaddr = 0;
     wire [7:0]            s02_axi_awlen = 0;
     wire [2:0]            s02_axi_awsize = 0;
     wire [1:0]            s02_axi_awburst = 0;
-    wire                   s02_axi_awlock = 0;
-    wire [3:0]             s02_axi_awcache = 0;
-    wire [2:0]             s02_axi_awprot = 0;
-    wire [3:0]             s02_axi_awqos = 0;
+    wire                  s02_axi_awlock = 0;
+    wire [3:0]            s02_axi_awcache = 0;
+    wire [2:0]            s02_axi_awprot = 0;
+    wire [3:0]            s02_axi_awqos = 0;
     wire [AWUSER_WIDTH-1:0] s02_axi_awuser = 0;
     wire                    s02_axi_awvalid = 0;
     wire                    s02_axi_awready;
@@ -152,12 +162,12 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ID_WIDTH-1:0]   s02_axi_arid = 0;
     wire [ADDR_WIDTH-1:0] s02_axi_araddr = 0;
     wire [7:0]            s02_axi_arlen = 0;
-    wire [2:0]             s02_axi_arsize = 0;
-    wire [1:0]             s02_axi_arburst = 0;
-    wire                   s02_axi_arlock = 0;
-    wire [3:0]             s02_axi_arcache = 0;
-    wire [2:0]             s02_axi_arprot = 0;
-    wire [3:0]             s02_axi_arqos = 0;
+    wire [2:0]            s02_axi_arsize = 0;
+    wire [1:0]            s02_axi_arburst = 0;
+    wire                  s02_axi_arlock = 0;
+    wire [3:0]            s02_axi_arcache = 0;
+    wire [2:0]            s02_axi_arprot = 0;
+    wire [3:0]            s02_axi_arqos = 0;
     wire [ARUSER_WIDTH-1:0] s02_axi_aruser = 0;
     wire                    s02_axi_arvalid = 0;
     wire                    s02_axi_arready;
@@ -171,16 +181,19 @@ module tb_axi_interconnect_wrap_4x9;
     wire                   s02_axi_rready = 1;
 
 
+    // ============================================================
     // S03
+    // ============================================================
+
     wire [ID_WIDTH-1:0]   s03_axi_awid = 0;
     wire [ADDR_WIDTH-1:0] s03_axi_awaddr = 0;
     wire [7:0]            s03_axi_awlen = 0;
     wire [2:0]            s03_axi_awsize = 0;
     wire [1:0]            s03_axi_awburst = 0;
-    wire                   s03_axi_awlock = 0;
-    wire [3:0]             s03_axi_awcache = 0;
-    wire [2:0]             s03_axi_awprot = 0;
-    wire [3:0]             s03_axi_awqos = 0;
+    wire                  s03_axi_awlock = 0;
+    wire [3:0]            s03_axi_awcache = 0;
+    wire [2:0]            s03_axi_awprot = 0;
+    wire [3:0]            s03_axi_awqos = 0;
     wire [AWUSER_WIDTH-1:0] s03_axi_awuser = 0;
     wire                    s03_axi_awvalid = 0;
     wire                    s03_axi_awready;
@@ -200,13 +213,13 @@ module tb_axi_interconnect_wrap_4x9;
 
     wire [ID_WIDTH-1:0]   s03_axi_arid = 0;
     wire [ADDR_WIDTH-1:0] s03_axi_araddr = 0;
-    wire [7:0]             s03_axi_arlen = 0;
-    wire [2:0]             s03_axi_arsize = 0;
-    wire [1:0]             s03_axi_arburst = 0;
-    wire                   s03_axi_arlock = 0;
-    wire [3:0]             s03_axi_arcache = 0;
-    wire [2:0]             s03_axi_arprot = 0;
-    wire [3:0]             s03_axi_arqos = 0;
+    wire [7:0]            s03_axi_arlen = 0;
+    wire [2:0]            s03_axi_arsize = 0;
+    wire [1:0]            s03_axi_arburst = 0;
+    wire                  s03_axi_arlock = 0;
+    wire [3:0]            s03_axi_arcache = 0;
+    wire [2:0]            s03_axi_arprot = 0;
+    wire [3:0]            s03_axi_arqos = 0;
     wire [ARUSER_WIDTH-1:0] s03_axi_aruser = 0;
     wire                    s03_axi_arvalid = 0;
     wire                    s03_axi_arready;
@@ -221,171 +234,169 @@ module tb_axi_interconnect_wrap_4x9;
 
 
     // ============================================================
-    // MASTER INTERFACE SIGNALS
+    // MASTER M00
     // ============================================================
 
     wire [ID_WIDTH-1:0]   m00_axi_awid;
     wire [ADDR_WIDTH-1:0] m00_axi_awaddr;
-    wire [7:0]             m00_axi_awlen;
-    wire [2:0]             m00_axi_awsize;
-    wire [1:0]             m00_axi_awburst;
-    wire                   m00_axi_awlock;
-    wire [3:0]             m00_axi_awcache;
-    wire [2:0]             m00_axi_awprot;
-    wire [3:0]             m00_axi_awqos;
-    wire [3:0]             m00_axi_awregion;
+    wire [7:0]            m00_axi_awlen;
+    wire [2:0]            m00_axi_awsize;
+    wire [1:0]            m00_axi_awburst;
+    wire                  m00_axi_awlock;
+    wire [3:0]            m00_axi_awcache;
+    wire [2:0]            m00_axi_awprot;
+    wire [3:0]            m00_axi_awqos;
+    wire [3:0]            m00_axi_awregion;
     wire [AWUSER_WIDTH-1:0] m00_axi_awuser;
-    wire                    m00_axi_awvalid;
-    reg                     m00_axi_awready = 1;
+    wire                   m00_axi_awvalid;
+    reg                    m00_axi_awready = 1;
 
-    wire [DATA_WIDTH-1:0]  m00_axi_wdata;
-    wire [STRB_WIDTH-1:0]  m00_axi_wstrb;
-    wire                    m00_axi_wlast;
+    wire [DATA_WIDTH-1:0] m00_axi_wdata;
+    wire [STRB_WIDTH-1:0] m00_axi_wstrb;
+    wire                   m00_axi_wlast;
     wire [WUSER_WIDTH-1:0] m00_axi_wuser;
-    wire                    m00_axi_wvalid;
-    reg                     m00_axi_wready = 1;
+    wire                   m00_axi_wvalid;
+    reg                    m00_axi_wready = 1;
 
     reg [ID_WIDTH-1:0]     m00_axi_bid = 0;
     reg [1:0]              m00_axi_bresp = 0;
-    reg [BUSER_WIDTH-1:0] m00_axi_buser = 0;
-    reg                     m00_axi_bvalid = 0;
-    wire                    m00_axi_bready;
+    reg [BUSER_WIDTH-1:0]  m00_axi_buser = 0;
+    reg                    m00_axi_bvalid = 0;
+    wire                   m00_axi_bready;
 
     wire [ID_WIDTH-1:0]    m00_axi_arid;
     wire [ADDR_WIDTH-1:0]  m00_axi_araddr;
-    wire [7:0]              m00_axi_arlen;
-    wire [2:0]              m00_axi_arsize;
-    wire [1:0]              m00_axi_arburst;
-    wire                    m00_axi_arlock;
-    wire [3:0]              m00_axi_arcache;
-    wire [2:0]              m00_axi_arprot;
-    wire [3:0]              m00_axi_arqos;
-    wire [3:0]              m00_axi_arregion;
+    wire [7:0]             m00_axi_arlen;
+    wire [2:0]             m00_axi_arsize;
+    wire [1:0]             m00_axi_arburst;
+    wire                   m00_axi_arlock;
+    wire [3:0]             m00_axi_arcache;
+    wire [2:0]             m00_axi_arprot;
+    wire [3:0]             m00_axi_arqos;
+    wire [3:0]             m00_axi_arregion;
     wire [ARUSER_WIDTH-1:0] m00_axi_aruser;
     wire                    m00_axi_arvalid;
     reg                     m00_axi_arready = 1;
 
     reg [ID_WIDTH-1:0]      m00_axi_rid = 0;
-    reg [DATA_WIDTH-1:0]   m00_axi_rdata = 0;
+    reg [DATA_WIDTH-1:0]    m00_axi_rdata = 0;
     reg [1:0]               m00_axi_rresp = 0;
     reg                     m00_axi_rlast = 1;
-    reg [RUSER_WIDTH-1:0]  m00_axi_ruser = 0;
+    reg [RUSER_WIDTH-1:0]   m00_axi_ruser = 0;
     reg                     m00_axi_rvalid = 0;
     wire                    m00_axi_rready;
 
 
-    // ------------------------------------------------------------
-    // M01-M08
-    // For initial routing test, all ready signals are asserted.
-    // Response signals are tied to zero.
-    // ------------------------------------------------------------
+    // ============================================================
+    // MASTER M01
+    // ============================================================
 
-    wire [ID_WIDTH-1:0]   m01_axi_awid;
-    wire [ADDR_WIDTH-1:0] m01_axi_awaddr;
-    wire [7:0] m01_axi_awlen;
-    wire [2:0] m01_axi_awsize;
-    wire [1:0] m01_axi_awburst;
-    wire m01_axi_awlock;
-    wire [3:0] m01_axi_awcache;
-    wire [2:0] m01_axi_awprot;
-    wire [3:0] m01_axi_awqos;
-    wire [3:0] m01_axi_awregion;
+    wire [ID_WIDTH-1:0]    m01_axi_awid;
+    wire [ADDR_WIDTH-1:0]  m01_axi_awaddr;
+    wire [7:0]             m01_axi_awlen;
+    wire [2:0]             m01_axi_awsize;
+    wire [1:0]             m01_axi_awburst;
+    wire                    m01_axi_awlock;
+    wire [3:0]             m01_axi_awcache;
+    wire [2:0]             m01_axi_awprot;
+    wire [3:0]             m01_axi_awqos;
+    wire [3:0]             m01_axi_awregion;
     wire [AWUSER_WIDTH-1:0] m01_axi_awuser;
-    wire m01_axi_awvalid;
-    reg  m01_axi_awready = 1;
+    wire                    m01_axi_awvalid;
+    reg                     m01_axi_awready = 1;
 
-    wire [DATA_WIDTH-1:0] m01_axi_wdata;
-    wire [STRB_WIDTH-1:0] m01_axi_wstrb;
-    wire m01_axi_wlast;
-    wire [WUSER_WIDTH-1:0] m01_axi_wuser;
-    wire m01_axi_wvalid;
-    reg  m01_axi_wready = 1;
+    wire [DATA_WIDTH-1:0]   m01_axi_wdata;
+    wire [STRB_WIDTH-1:0]   m01_axi_wstrb;
+    wire                    m01_axi_wlast;
+    wire [WUSER_WIDTH-1:0]  m01_axi_wuser;
+    wire                    m01_axi_wvalid;
+    reg                     m01_axi_wready = 1;
 
-    wire [ID_WIDTH-1:0] m01_axi_bid = 0;
-    wire [1:0] m01_axi_bresp = 0;
-    wire [BUSER_WIDTH-1:0] m01_axi_buser = 0;
-    wire m01_axi_bvalid = 0;
-    wire m01_axi_bready;
+    reg [ID_WIDTH-1:0]      m01_axi_bid = 0;
+    reg [1:0]               m01_axi_bresp = 0;
+    reg [BUSER_WIDTH-1:0]   m01_axi_buser = 0;
+    reg                     m01_axi_bvalid = 0;
+    wire                    m01_axi_bready;
 
-    wire [ID_WIDTH-1:0] m01_axi_arid;
-    wire [ADDR_WIDTH-1:0] m01_axi_araddr;
-    wire [7:0] m01_axi_arlen;
-    wire [2:0] m01_axi_arsize;
-    wire [1:0] m01_axi_arburst;
-    wire m01_axi_arlock;
-    wire [3:0] m01_axi_arcache;
-    wire [2:0] m01_axi_arprot;
-    wire [3:0] m01_axi_arqos;
-    wire [3:0] m01_axi_arregion;
+    wire [ID_WIDTH-1:0]     m01_axi_arid;
+    wire [ADDR_WIDTH-1:0]   m01_axi_araddr;
+    wire [7:0]              m01_axi_arlen;
+    wire [2:0]              m01_axi_arsize;
+    wire [1:0]              m01_axi_arburst;
+    wire                    m01_axi_arlock;
+    wire [3:0]              m01_axi_arcache;
+    wire [2:0]              m01_axi_arprot;
+    wire [3:0]              m01_axi_arqos;
+    wire [3:0]              m01_axi_arregion;
     wire [ARUSER_WIDTH-1:0] m01_axi_aruser;
-    wire m01_axi_arvalid;
-    reg  m01_axi_arready = 1;
+    wire                    m01_axi_arvalid;
+    reg                     m01_axi_arready = 1;
 
-    wire [ID_WIDTH-1:0] m01_axi_rid = 0;
-    wire [DATA_WIDTH-1:0] m01_axi_rdata = 0;
-    wire [1:0] m01_axi_rresp = 0;
-    wire m01_axi_rlast = 1;
-    wire [RUSER_WIDTH-1:0] m01_axi_ruser = 0;
-    wire m01_axi_rvalid = 0;
-    wire m01_axi_rready;
+    wire [ID_WIDTH-1:0]     m01_axi_rid = 0;
+    wire [DATA_WIDTH-1:0]   m01_axi_rdata = 0;
+    wire [1:0]              m01_axi_rresp = 0;
+    wire                    m01_axi_rlast = 1;
+    wire [RUSER_WIDTH-1:0]  m01_axi_ruser = 0;
+    wire                    m01_axi_rvalid = 0;
+    wire                    m01_axi_rready;
 
 
     // ============================================================
-    // M02-M08: unused outputs/inputs
+    // MASTER M02
     // ============================================================
 
     wire [ID_WIDTH-1:0]   m02_axi_awid;
     wire [ADDR_WIDTH-1:0] m02_axi_awaddr;
-    wire [7:0] m02_axi_awlen;
-    wire [2:0] m02_axi_awsize;
-    wire [1:0] m02_axi_awburst;
-    wire m02_axi_awlock;
-    wire [3:0] m02_axi_awcache;
-    wire [2:0] m02_axi_awprot;
-    wire [3:0] m02_axi_awqos;
-    wire [3:0] m02_axi_awregion;
+    wire [7:0]            m02_axi_awlen;
+    wire [2:0]            m02_axi_awsize;
+    wire [1:0]            m02_axi_awburst;
+    wire                  m02_axi_awlock;
+    wire [3:0]            m02_axi_awcache;
+    wire [2:0]            m02_axi_awprot;
+    wire [3:0]            m02_axi_awqos;
+    wire [3:0]            m02_axi_awregion;
     wire [AWUSER_WIDTH-1:0] m02_axi_awuser;
-    wire m02_axi_awvalid;
-    reg m02_axi_awready = 1;
+    wire                  m02_axi_awvalid;
+    reg                   m02_axi_awready = 1;
 
     wire [DATA_WIDTH-1:0] m02_axi_wdata;
     wire [STRB_WIDTH-1:0] m02_axi_wstrb;
-    wire m02_axi_wlast;
+    wire                  m02_axi_wlast;
     wire [WUSER_WIDTH-1:0] m02_axi_wuser;
-    wire m02_axi_wvalid;
-    reg m02_axi_wready = 1;
+    wire                  m02_axi_wvalid;
+    reg                   m02_axi_wready = 1;
 
-    wire [ID_WIDTH-1:0] m02_axi_bid = 0;
-    wire [1:0] m02_axi_bresp = 0;
+    wire [ID_WIDTH-1:0]   m02_axi_bid = 0;
+    wire [1:0]            m02_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m02_axi_buser = 0;
-    wire m02_axi_bvalid = 0;
-    wire m02_axi_bready;
+    wire                  m02_axi_bvalid = 0;
+    wire                  m02_axi_bready;
 
-    wire [ID_WIDTH-1:0] m02_axi_arid;
+    wire [ID_WIDTH-1:0]   m02_axi_arid;
     wire [ADDR_WIDTH-1:0] m02_axi_araddr;
-    wire [7:0] m02_axi_arlen;
-    wire [2:0] m02_axi_arsize;
-    wire [1:0] m02_axi_arburst;
-    wire m02_axi_arlock;
-    wire [3:0] m02_axi_arcache;
-    wire [2:0] m02_axi_arprot;
-    wire [3:0] m02_axi_arqos;
-    wire [3:0] m02_axi_arregion;
+    wire [7:0]            m02_axi_arlen;
+    wire [2:0]            m02_axi_arsize;
+    wire [1:0]            m02_axi_arburst;
+    wire                  m02_axi_arlock;
+    wire [3:0]            m02_axi_arcache;
+    wire [2:0]            m02_axi_arprot;
+    wire [3:0]            m02_axi_arqos;
+    wire [3:0]            m02_axi_arregion;
     wire [ARUSER_WIDTH-1:0] m02_axi_aruser;
-    wire m02_axi_arvalid;
-    reg m02_axi_arready = 1;
+    wire                  m02_axi_arvalid;
+    reg                   m02_axi_arready = 1;
 
-    wire [ID_WIDTH-1:0] m02_axi_rid = 0;
+    wire [ID_WIDTH-1:0]   m02_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m02_axi_rdata = 0;
-    wire [1:0] m02_axi_rresp = 0;
-    wire m02_axi_rlast = 1;
+    wire [1:0]            m02_axi_rresp = 0;
+    wire                  m02_axi_rlast = 1;
     wire [RUSER_WIDTH-1:0] m02_axi_ruser = 0;
-    wire m02_axi_rvalid = 0;
-    wire m02_axi_rready;
+    wire                  m02_axi_rvalid = 0;
+    wire                  m02_axi_rready;
 
 
     // ============================================================
-    // M03-M08 can be declared as simple equivalent signals
+    // MASTER M03
     // ============================================================
 
     wire [ID_WIDTH-1:0] m03_axi_awid;
@@ -401,17 +412,20 @@ module tb_axi_interconnect_wrap_4x9;
     wire [AWUSER_WIDTH-1:0] m03_axi_awuser;
     wire m03_axi_awvalid;
     reg m03_axi_awready = 1;
+
     wire [DATA_WIDTH-1:0] m03_axi_wdata;
     wire [STRB_WIDTH-1:0] m03_axi_wstrb;
     wire m03_axi_wlast;
     wire [WUSER_WIDTH-1:0] m03_axi_wuser;
     wire m03_axi_wvalid;
     reg m03_axi_wready = 1;
+
     wire [ID_WIDTH-1:0] m03_axi_bid = 0;
     wire [1:0] m03_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m03_axi_buser = 0;
     wire m03_axi_bvalid = 0;
     wire m03_axi_bready;
+
     wire [ID_WIDTH-1:0] m03_axi_arid;
     wire [ADDR_WIDTH-1:0] m03_axi_araddr;
     wire [7:0] m03_axi_arlen;
@@ -425,6 +439,7 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ARUSER_WIDTH-1:0] m03_axi_aruser;
     wire m03_axi_arvalid;
     reg m03_axi_arready = 1;
+
     wire [ID_WIDTH-1:0] m03_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m03_axi_rdata = 0;
     wire [1:0] m03_axi_rresp = 0;
@@ -435,7 +450,7 @@ module tb_axi_interconnect_wrap_4x9;
 
 
     // ============================================================
-    // M04-M08
+    // MASTER M04
     // ============================================================
 
     wire [ID_WIDTH-1:0] m04_axi_awid;
@@ -451,17 +466,20 @@ module tb_axi_interconnect_wrap_4x9;
     wire [AWUSER_WIDTH-1:0] m04_axi_awuser;
     wire m04_axi_awvalid;
     reg m04_axi_awready = 1;
+
     wire [DATA_WIDTH-1:0] m04_axi_wdata;
     wire [STRB_WIDTH-1:0] m04_axi_wstrb;
     wire m04_axi_wlast;
     wire [WUSER_WIDTH-1:0] m04_axi_wuser;
     wire m04_axi_wvalid;
     reg m04_axi_wready = 1;
+
     wire [ID_WIDTH-1:0] m04_axi_bid = 0;
     wire [1:0] m04_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m04_axi_buser = 0;
     wire m04_axi_bvalid = 0;
     wire m04_axi_bready;
+
     wire [ID_WIDTH-1:0] m04_axi_arid;
     wire [ADDR_WIDTH-1:0] m04_axi_araddr;
     wire [7:0] m04_axi_arlen;
@@ -475,6 +493,7 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ARUSER_WIDTH-1:0] m04_axi_aruser;
     wire m04_axi_arvalid;
     reg m04_axi_arready = 1;
+
     wire [ID_WIDTH-1:0] m04_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m04_axi_rdata = 0;
     wire [1:0] m04_axi_rresp = 0;
@@ -483,6 +502,10 @@ module tb_axi_interconnect_wrap_4x9;
     wire m04_axi_rvalid = 0;
     wire m04_axi_rready;
 
+
+    // ============================================================
+    // MASTER M05
+    // ============================================================
 
     wire [ID_WIDTH-1:0] m05_axi_awid;
     wire [ADDR_WIDTH-1:0] m05_axi_awaddr;
@@ -497,17 +520,20 @@ module tb_axi_interconnect_wrap_4x9;
     wire [AWUSER_WIDTH-1:0] m05_axi_awuser;
     wire m05_axi_awvalid;
     reg m05_axi_awready = 1;
+
     wire [DATA_WIDTH-1:0] m05_axi_wdata;
     wire [STRB_WIDTH-1:0] m05_axi_wstrb;
     wire m05_axi_wlast;
     wire [WUSER_WIDTH-1:0] m05_axi_wuser;
     wire m05_axi_wvalid;
     reg m05_axi_wready = 1;
+
     wire [ID_WIDTH-1:0] m05_axi_bid = 0;
     wire [1:0] m05_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m05_axi_buser = 0;
     wire m05_axi_bvalid = 0;
     wire m05_axi_bready;
+
     wire [ID_WIDTH-1:0] m05_axi_arid;
     wire [ADDR_WIDTH-1:0] m05_axi_araddr;
     wire [7:0] m05_axi_arlen;
@@ -521,6 +547,7 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ARUSER_WIDTH-1:0] m05_axi_aruser;
     wire m05_axi_arvalid;
     reg m05_axi_arready = 1;
+
     wire [ID_WIDTH-1:0] m05_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m05_axi_rdata = 0;
     wire [1:0] m05_axi_rresp = 0;
@@ -529,6 +556,10 @@ module tb_axi_interconnect_wrap_4x9;
     wire m05_axi_rvalid = 0;
     wire m05_axi_rready;
 
+
+    // ============================================================
+    // MASTER M06
+    // ============================================================
 
     wire [ID_WIDTH-1:0] m06_axi_awid;
     wire [ADDR_WIDTH-1:0] m06_axi_awaddr;
@@ -543,17 +574,20 @@ module tb_axi_interconnect_wrap_4x9;
     wire [AWUSER_WIDTH-1:0] m06_axi_awuser;
     wire m06_axi_awvalid;
     reg m06_axi_awready = 1;
+
     wire [DATA_WIDTH-1:0] m06_axi_wdata;
     wire [STRB_WIDTH-1:0] m06_axi_wstrb;
     wire m06_axi_wlast;
     wire [WUSER_WIDTH-1:0] m06_axi_wuser;
     wire m06_axi_wvalid;
     reg m06_axi_wready = 1;
+
     wire [ID_WIDTH-1:0] m06_axi_bid = 0;
     wire [1:0] m06_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m06_axi_buser = 0;
     wire m06_axi_bvalid = 0;
     wire m06_axi_bready;
+
     wire [ID_WIDTH-1:0] m06_axi_arid;
     wire [ADDR_WIDTH-1:0] m06_axi_araddr;
     wire [7:0] m06_axi_arlen;
@@ -567,6 +601,7 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ARUSER_WIDTH-1:0] m06_axi_aruser;
     wire m06_axi_arvalid;
     reg m06_axi_arready = 1;
+
     wire [ID_WIDTH-1:0] m06_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m06_axi_rdata = 0;
     wire [1:0] m06_axi_rresp = 0;
@@ -575,6 +610,10 @@ module tb_axi_interconnect_wrap_4x9;
     wire m06_axi_rvalid = 0;
     wire m06_axi_rready;
 
+
+    // ============================================================
+    // MASTER M07
+    // ============================================================
 
     wire [ID_WIDTH-1:0] m07_axi_awid;
     wire [ADDR_WIDTH-1:0] m07_axi_awaddr;
@@ -589,17 +628,20 @@ module tb_axi_interconnect_wrap_4x9;
     wire [AWUSER_WIDTH-1:0] m07_axi_awuser;
     wire m07_axi_awvalid;
     reg m07_axi_awready = 1;
+
     wire [DATA_WIDTH-1:0] m07_axi_wdata;
     wire [STRB_WIDTH-1:0] m07_axi_wstrb;
     wire m07_axi_wlast;
     wire [WUSER_WIDTH-1:0] m07_axi_wuser;
     wire m07_axi_wvalid;
     reg m07_axi_wready = 1;
+
     wire [ID_WIDTH-1:0] m07_axi_bid = 0;
     wire [1:0] m07_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m07_axi_buser = 0;
     wire m07_axi_bvalid = 0;
     wire m07_axi_bready;
+
     wire [ID_WIDTH-1:0] m07_axi_arid;
     wire [ADDR_WIDTH-1:0] m07_axi_araddr;
     wire [7:0] m07_axi_arlen;
@@ -613,6 +655,7 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ARUSER_WIDTH-1:0] m07_axi_aruser;
     wire m07_axi_arvalid;
     reg m07_axi_arready = 1;
+
     wire [ID_WIDTH-1:0] m07_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m07_axi_rdata = 0;
     wire [1:0] m07_axi_rresp = 0;
@@ -621,6 +664,10 @@ module tb_axi_interconnect_wrap_4x9;
     wire m07_axi_rvalid = 0;
     wire m07_axi_rready;
 
+
+    // ============================================================
+    // MASTER M08
+    // ============================================================
 
     wire [ID_WIDTH-1:0] m08_axi_awid;
     wire [ADDR_WIDTH-1:0] m08_axi_awaddr;
@@ -635,17 +682,20 @@ module tb_axi_interconnect_wrap_4x9;
     wire [AWUSER_WIDTH-1:0] m08_axi_awuser;
     wire m08_axi_awvalid;
     reg m08_axi_awready = 1;
+
     wire [DATA_WIDTH-1:0] m08_axi_wdata;
     wire [STRB_WIDTH-1:0] m08_axi_wstrb;
     wire m08_axi_wlast;
     wire [WUSER_WIDTH-1:0] m08_axi_wuser;
     wire m08_axi_wvalid;
     reg m08_axi_wready = 1;
+
     wire [ID_WIDTH-1:0] m08_axi_bid = 0;
     wire [1:0] m08_axi_bresp = 0;
     wire [BUSER_WIDTH-1:0] m08_axi_buser = 0;
     wire m08_axi_bvalid = 0;
     wire m08_axi_bready;
+
     wire [ID_WIDTH-1:0] m08_axi_arid;
     wire [ADDR_WIDTH-1:0] m08_axi_araddr;
     wire [7:0] m08_axi_arlen;
@@ -659,6 +709,7 @@ module tb_axi_interconnect_wrap_4x9;
     wire [ARUSER_WIDTH-1:0] m08_axi_aruser;
     wire m08_axi_arvalid;
     reg m08_axi_arready = 1;
+
     wire [ID_WIDTH-1:0] m08_axi_rid = 0;
     wire [DATA_WIDTH-1:0] m08_axi_rdata = 0;
     wire [1:0] m08_axi_rresp = 0;
@@ -666,6 +717,64 @@ module tb_axi_interconnect_wrap_4x9;
     wire [RUSER_WIDTH-1:0] m08_axi_ruser = 0;
     wire m08_axi_rvalid = 0;
     wire m08_axi_rready;
+
+
+    // ============================================================
+    // SLAVE WRITE-RESPONSE MODELS
+    // ============================================================
+    // The interconnect waits in STATE_WRITE_RESP for BVALID from the
+    // selected master. Without a response it never returns to IDLE and
+    // blocks all later transactions. Model a one-cycle write response
+    // for the masters exercised by this testbench (M00 and M01).
+    // ============================================================
+
+    always @(posedge clk) begin
+        if (rst) begin
+            m00_axi_bid    <= 0;
+            m00_axi_bresp  <= 0;
+            m00_axi_buser  <= 0;
+            m00_axi_bvalid <= 0;
+        end else begin
+            if (m00_axi_awvalid && m00_axi_awready) begin
+                m00_axi_bid <= m00_axi_awid;
+            end
+
+            if (m00_axi_bvalid) begin
+                // Hold BVALID until the interconnect accepts it.
+                if (m00_axi_bready) begin
+                    m00_axi_bvalid <= 1'b0;
+                end
+            end else if (m00_axi_wvalid && m00_axi_wready && m00_axi_wlast) begin
+                m00_axi_bresp  <= 2'b00;
+                m00_axi_buser  <= 0;
+                m00_axi_bvalid <= 1'b1;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            m01_axi_bid    <= 0;
+            m01_axi_bresp  <= 0;
+            m01_axi_buser  <= 0;
+            m01_axi_bvalid <= 0;
+        end else begin
+            if (m01_axi_awvalid && m01_axi_awready) begin
+                m01_axi_bid <= m01_axi_awid;
+            end
+
+            if (m01_axi_bvalid) begin
+                // Hold BVALID until the interconnect accepts it.
+                if (m01_axi_bready) begin
+                    m01_axi_bvalid <= 1'b0;
+                end
+            end else if (m01_axi_wvalid && m01_axi_wready && m01_axi_wlast) begin
+                m01_axi_bresp  <= 2'b00;
+                m01_axi_buser  <= 0;
+                m01_axi_bvalid <= 1'b1;
+            end
+        end
+    end
 
 
     // ============================================================
@@ -703,7 +812,10 @@ module tb_axi_interconnect_wrap_4x9;
         .clk(clk),
         .rst(rst),
 
+        // ========================================================
         // S00
+        // ========================================================
+
         .s00_axi_awid(s00_axi_awid),
         .s00_axi_awaddr(s00_axi_awaddr),
         .s00_axi_awlen(s00_axi_awlen),
@@ -751,7 +863,10 @@ module tb_axi_interconnect_wrap_4x9;
         .s00_axi_rvalid(s00_axi_rvalid),
         .s00_axi_rready(s00_axi_rready),
 
+        // ========================================================
         // S01
+        // ========================================================
+
         .s01_axi_awid(s01_axi_awid),
         .s01_axi_awaddr(s01_axi_awaddr),
         .s01_axi_awlen(s01_axi_awlen),
@@ -764,17 +879,20 @@ module tb_axi_interconnect_wrap_4x9;
         .s01_axi_awuser(s01_axi_awuser),
         .s01_axi_awvalid(s01_axi_awvalid),
         .s01_axi_awready(s01_axi_awready),
+
         .s01_axi_wdata(s01_axi_wdata),
         .s01_axi_wstrb(s01_axi_wstrb),
         .s01_axi_wlast(s01_axi_wlast),
         .s01_axi_wuser(s01_axi_wuser),
         .s01_axi_wvalid(s01_axi_wvalid),
         .s01_axi_wready(s01_axi_wready),
+
         .s01_axi_bid(s01_axi_bid),
         .s01_axi_bresp(s01_axi_bresp),
         .s01_axi_buser(s01_axi_buser),
         .s01_axi_bvalid(s01_axi_bvalid),
         .s01_axi_bready(s01_axi_bready),
+
         .s01_axi_arid(s01_axi_arid),
         .s01_axi_araddr(s01_axi_araddr),
         .s01_axi_arlen(s01_axi_arlen),
@@ -787,6 +905,7 @@ module tb_axi_interconnect_wrap_4x9;
         .s01_axi_aruser(s01_axi_aruser),
         .s01_axi_arvalid(s01_axi_arvalid),
         .s01_axi_arready(s01_axi_arready),
+
         .s01_axi_rid(s01_axi_rid),
         .s01_axi_rdata(s01_axi_rdata),
         .s01_axi_rresp(s01_axi_rresp),
@@ -795,7 +914,10 @@ module tb_axi_interconnect_wrap_4x9;
         .s01_axi_rvalid(s01_axi_rvalid),
         .s01_axi_rready(s01_axi_rready),
 
+        // ========================================================
         // S02
+        // ========================================================
+
         .s02_axi_awid(s02_axi_awid),
         .s02_axi_awaddr(s02_axi_awaddr),
         .s02_axi_awlen(s02_axi_awlen),
@@ -808,17 +930,20 @@ module tb_axi_interconnect_wrap_4x9;
         .s02_axi_awuser(s02_axi_awuser),
         .s02_axi_awvalid(s02_axi_awvalid),
         .s02_axi_awready(s02_axi_awready),
+
         .s02_axi_wdata(s02_axi_wdata),
         .s02_axi_wstrb(s02_axi_wstrb),
         .s02_axi_wlast(s02_axi_wlast),
         .s02_axi_wuser(s02_axi_wuser),
         .s02_axi_wvalid(s02_axi_wvalid),
         .s02_axi_wready(s02_axi_wready),
+
         .s02_axi_bid(s02_axi_bid),
         .s02_axi_bresp(s02_axi_bresp),
         .s02_axi_buser(s02_axi_buser),
         .s02_axi_bvalid(s02_axi_bvalid),
         .s02_axi_bready(s02_axi_bready),
+
         .s02_axi_arid(s02_axi_arid),
         .s02_axi_araddr(s02_axi_araddr),
         .s02_axi_arlen(s02_axi_arlen),
@@ -831,6 +956,7 @@ module tb_axi_interconnect_wrap_4x9;
         .s02_axi_aruser(s02_axi_aruser),
         .s02_axi_arvalid(s02_axi_arvalid),
         .s02_axi_arready(s02_axi_arready),
+
         .s02_axi_rid(s02_axi_rid),
         .s02_axi_rdata(s02_axi_rdata),
         .s02_axi_rresp(s02_axi_rresp),
@@ -839,7 +965,10 @@ module tb_axi_interconnect_wrap_4x9;
         .s02_axi_rvalid(s02_axi_rvalid),
         .s02_axi_rready(s02_axi_rready),
 
+        // ========================================================
         // S03
+        // ========================================================
+
         .s03_axi_awid(s03_axi_awid),
         .s03_axi_awaddr(s03_axi_awaddr),
         .s03_axi_awlen(s03_axi_awlen),
@@ -852,17 +981,20 @@ module tb_axi_interconnect_wrap_4x9;
         .s03_axi_awuser(s03_axi_awuser),
         .s03_axi_awvalid(s03_axi_awvalid),
         .s03_axi_awready(s03_axi_awready),
+
         .s03_axi_wdata(s03_axi_wdata),
         .s03_axi_wstrb(s03_axi_wstrb),
         .s03_axi_wlast(s03_axi_wlast),
         .s03_axi_wuser(s03_axi_wuser),
         .s03_axi_wvalid(s03_axi_wvalid),
         .s03_axi_wready(s03_axi_wready),
+
         .s03_axi_bid(s03_axi_bid),
         .s03_axi_bresp(s03_axi_bresp),
         .s03_axi_buser(s03_axi_buser),
         .s03_axi_bvalid(s03_axi_bvalid),
         .s03_axi_bready(s03_axi_bready),
+
         .s03_axi_arid(s03_axi_arid),
         .s03_axi_araddr(s03_axi_araddr),
         .s03_axi_arlen(s03_axi_arlen),
@@ -875,6 +1007,7 @@ module tb_axi_interconnect_wrap_4x9;
         .s03_axi_aruser(s03_axi_aruser),
         .s03_axi_arvalid(s03_axi_arvalid),
         .s03_axi_arready(s03_axi_arready),
+
         .s03_axi_rid(s03_axi_rid),
         .s03_axi_rdata(s03_axi_rdata),
         .s03_axi_rresp(s03_axi_rresp),
@@ -883,7 +1016,10 @@ module tb_axi_interconnect_wrap_4x9;
         .s03_axi_rvalid(s03_axi_rvalid),
         .s03_axi_rready(s03_axi_rready),
 
-        // Masters
+        // ========================================================
+        // M00
+        // ========================================================
+
         .m00_axi_awid(m00_axi_awid),
         .m00_axi_awaddr(m00_axi_awaddr),
         .m00_axi_awlen(m00_axi_awlen),
@@ -897,17 +1033,20 @@ module tb_axi_interconnect_wrap_4x9;
         .m00_axi_awuser(m00_axi_awuser),
         .m00_axi_awvalid(m00_axi_awvalid),
         .m00_axi_awready(m00_axi_awready),
+
         .m00_axi_wdata(m00_axi_wdata),
         .m00_axi_wstrb(m00_axi_wstrb),
         .m00_axi_wlast(m00_axi_wlast),
         .m00_axi_wuser(m00_axi_wuser),
         .m00_axi_wvalid(m00_axi_wvalid),
         .m00_axi_wready(m00_axi_wready),
+
         .m00_axi_bid(m00_axi_bid),
         .m00_axi_bresp(m00_axi_bresp),
         .m00_axi_buser(m00_axi_buser),
         .m00_axi_bvalid(m00_axi_bvalid),
         .m00_axi_bready(m00_axi_bready),
+
         .m00_axi_arid(m00_axi_arid),
         .m00_axi_araddr(m00_axi_araddr),
         .m00_axi_arlen(m00_axi_arlen),
@@ -921,17 +1060,67 @@ module tb_axi_interconnect_wrap_4x9;
         .m00_axi_aruser(m00_axi_aruser),
         .m00_axi_arvalid(m00_axi_arvalid),
         .m00_axi_arready(m00_axi_arready),
+
         .m00_axi_rid(m00_axi_rid),
         .m00_axi_rdata(m00_axi_rdata),
         .m00_axi_rresp(m00_axi_rresp),
         .m00_axi_rlast(m00_axi_rlast),
         .m00_axi_ruser(m00_axi_ruser),
         .m00_axi_rvalid(m00_axi_rvalid),
-        .m00_axi_rready(m00_axi_rready)
+        .m00_axi_rready(m00_axi_rready),
 
-        // NOTE:
-        // M01-M08 connections should be added here.
-        // They are identical in structure to M00.
+        // ========================================================
+        // M01
+        // ========================================================
+
+        .m01_axi_awid(m01_axi_awid),
+        .m01_axi_awaddr(m01_axi_awaddr),
+        .m01_axi_awlen(m01_axi_awlen),
+        .m01_axi_awsize(m01_axi_awsize),
+        .m01_axi_awburst(m01_axi_awburst),
+        .m01_axi_awlock(m01_axi_awlock),
+        .m01_axi_awcache(m01_axi_awcache),
+        .m01_axi_awprot(m01_axi_awprot),
+        .m01_axi_awqos(m01_axi_awqos),
+        .m01_axi_awregion(m01_axi_awregion),
+        .m01_axi_awuser(m01_axi_awuser),
+        .m01_axi_awvalid(m01_axi_awvalid),
+        .m01_axi_awready(m01_axi_awready),
+
+        .m01_axi_wdata(m01_axi_wdata),
+        .m01_axi_wstrb(m01_axi_wstrb),
+        .m01_axi_wlast(m01_axi_wlast),
+        .m01_axi_wuser(m01_axi_wuser),
+        .m01_axi_wvalid(m01_axi_wvalid),
+        .m01_axi_wready(m01_axi_wready),
+
+        .m01_axi_bid(m01_axi_bid),
+        .m01_axi_bresp(m01_axi_bresp),
+        .m01_axi_buser(m01_axi_buser),
+        .m01_axi_bvalid(m01_axi_bvalid),
+        .m01_axi_bready(m01_axi_bready),
+
+        .m01_axi_arid(m01_axi_arid),
+        .m01_axi_araddr(m01_axi_araddr),
+        .m01_axi_arlen(m01_axi_arlen),
+        .m01_axi_arsize(m01_axi_arsize),
+        .m01_axi_arburst(m01_axi_arburst),
+        .m01_axi_arlock(m01_axi_arlock),
+        .m01_axi_arcache(m01_axi_arcache),
+        .m01_axi_arprot(m01_axi_arprot),
+        .m01_axi_arqos(m01_axi_arqos),
+        .m01_axi_arregion(m01_axi_arregion),
+        .m01_axi_aruser(m01_axi_aruser),
+        .m01_axi_arvalid(m01_axi_arvalid),
+        .m01_axi_arready(m01_axi_arready),
+
+        .m01_axi_rid(m01_axi_rid),
+        .m01_axi_rdata(m01_axi_rdata),
+        .m01_axi_rresp(m01_axi_rresp),
+        .m01_axi_rlast(m01_axi_rlast),
+        .m01_axi_ruser(m01_axi_ruser),
+        .m01_axi_rvalid(m01_axi_rvalid),
+        .m01_axi_rready(m01_axi_rready)
     );
 
 
@@ -951,7 +1140,10 @@ module tb_axi_interconnect_wrap_4x9;
 
     initial begin
 
+        // --------------------------------------------------------
         // Initial values
+        // --------------------------------------------------------
+
         rst = 1;
 
         s00_axi_awid    = 0;
@@ -994,8 +1186,9 @@ module tb_axi_interconnect_wrap_4x9;
 
         #50;
 
+
         // ========================================================
-        // TEST 1: Write to M00 address region
+        // TEST 1: Write to M00
         // ========================================================
 
         $display("========================================");
@@ -1006,19 +1199,33 @@ module tb_axi_interconnect_wrap_4x9;
 
         s00_axi_awid    <= 8'h01;
         s00_axi_awaddr  <= 32'h00000010;
-        s00_axi_awvalid <= 1;
+        s00_axi_awvalid <= 1'b1;
 
         s00_axi_wdata   <= 32'h12345678;
-        s00_axi_wvalid  <= 1;
-        s00_axi_wlast   <= 1;
+        s00_axi_wvalid  <= 1'b1;
+        s00_axi_wlast   <= 1'b1;
 
         @(posedge clk);
 
         while (!s00_axi_awready)
             @(posedge clk);
 
-        s00_axi_awvalid <= 0;
-        s00_axi_wvalid  <= 0;
+        s00_axi_awvalid <= 1'b0;
+
+        while (!s00_axi_wready)
+            @(posedge clk);
+
+        s00_axi_wvalid  <= 1'b0;
+
+        // Wait for the slave write response. This releases the
+        // interconnect from STATE_WRITE_RESP and lets the next
+        // transaction proceed.
+        while (!s00_axi_bvalid)
+            @(posedge clk);
+
+        @(posedge clk);
+
+        $display("M00 write response received (BRESP=%b)", s00_axi_bresp);
 
         #20;
 
@@ -1027,8 +1234,10 @@ module tb_axi_interconnect_wrap_4x9;
         $display("M00 Data    = %h", m00_axi_wdata);
         $display("M00 Valid   = %b", m00_axi_awvalid);
 
+
         // ========================================================
-        // TEST 2: Write to M01 address region
+        // TEST 2: Write to M01
+        // M01 BASE ADDRESS = 0x10000000
         // ========================================================
 
         $display("========================================");
@@ -1038,20 +1247,57 @@ module tb_axi_interconnect_wrap_4x9;
         @(posedge clk);
 
         s00_axi_awid    <= 8'h02;
+
+        // IMPORTANT:
+        // M01 base address is 0x10000000.
+        // Therefore use 0x10000010 for M01.
         s00_axi_awaddr  <= 32'h10000010;
-        s00_axi_awvalid <= 1;
+
+        s00_axi_awvalid <= 1'b1;
 
         s00_axi_wdata   <= 32'hAABBCCDD;
-        s00_axi_wvalid  <= 1;
-        s00_axi_wlast   <= 1;
+        s00_axi_wvalid  <= 1'b1;
+        s00_axi_wlast   <= 1'b1;
+
+        $display("TEST 2: AWVALID=%b AWADDR=%h",
+                 s00_axi_awvalid,
+                 s00_axi_awaddr);
+
+        while (!s00_axi_awready) begin
+            @(posedge clk);
+
+            $display(
+                "Time=%0t AWVALID=%b AWREADY=%b AWADDR=%h | M01_AWVALID=%b M01_AWREADY=%b",
+                $time,
+                s00_axi_awvalid,
+                s00_axi_awready,
+                s00_axi_awaddr,
+                m01_axi_awvalid,
+                m01_axi_awready
+            );
+        end
+
+        s00_axi_awvalid <= 1'b0;
+
+        while (!s00_axi_wready)
+            @(posedge clk);
+
+        s00_axi_wvalid  <= 1'b0;
+
+        while (!s00_axi_bvalid) begin
+            @(posedge clk);
+
+            $display(
+                "Time=%0t waiting for M01 BVALID | BVALID=%b BREADY=%b",
+                $time,
+                m01_axi_bvalid,
+                m01_axi_bready
+            );
+        end
 
         @(posedge clk);
 
-        while (!s00_axi_awready)
-            @(posedge clk);
-
-        s00_axi_awvalid <= 0;
-        s00_axi_wvalid  <= 0;
+        $display("M01 write response received (BRESP=%b)", s00_axi_bresp);
 
         #20;
 
@@ -1059,6 +1305,7 @@ module tb_axi_interconnect_wrap_4x9;
         $display("M01 Address = %h", m01_axi_awaddr);
         $display("M01 Data    = %h", m01_axi_wdata);
         $display("M01 Valid   = %b", m01_axi_awvalid);
+
 
         // ========================================================
         // End simulation
@@ -1079,12 +1326,11 @@ module tb_axi_interconnect_wrap_4x9;
     // WAVEFORM
     // ============================================================
 
-initial begin
-    $fsdbDumpfile("dump.fsdb");
-    $fsdbDumpvars("+all");
-    $fsdbDumpSVA();
-    $fsdbDumpMDA();
-end
-endmodule
-```
+    initial begin
+        $fsdbDumpfile("dump.fsdb");
+        $fsdbDumpvars("+all");
+        $fsdbDumpSVA();
+        $fsdbDumpMDA();
+    end
 
+endmodule

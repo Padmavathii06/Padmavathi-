@@ -5,6 +5,8 @@ module tb_axi_lite_test_ip;
     parameter ADDR_WIDTH = 32;
     parameter DATA_WIDTH = 32;
 
+    integer errors;
+
     reg clk;
     reg rst_n;
 
@@ -127,6 +129,11 @@ module tb_axi_lite_test_ip;
 
             wait (s_axi_bvalid);
 
+            if (s_axi_bresp !== 2'b00) begin
+                errors = errors + 1;
+                $display("ERROR: write bresp = %0d, expected OKAY", s_axi_bresp);
+            end
+
             @(posedge clk);
 
             s_axi_bready <= 1'b1;
@@ -169,6 +176,11 @@ module tb_axi_lite_test_ip;
 
             data = s_axi_rdata;
 
+            if (s_axi_rresp !== 2'b00) begin
+                errors = errors + 1;
+                $display("ERROR: read rresp = %0d, expected OKAY", s_axi_rresp);
+            end
+
             $display("READ : ADDR = %h DATA = %h",
                      addr, data);
 
@@ -191,7 +203,23 @@ module tb_axi_lite_test_ip;
 
     reg [31:0] read_data;
 
+    task check_value(
+        input [31:0]  got,
+        input [31:0]  exp,
+        input [127:0] name
+    );
+        begin
+            if (got !== exp) begin
+                errors = errors + 1;
+                $display("ERROR: %0s: got 0x%08h, expected 0x%08h",
+                         name, got, exp);
+            end
+        end
+    endtask
+
     initial begin
+
+        errors = 0;
 
         // Initial values
 
@@ -255,37 +283,57 @@ module tb_axi_lite_test_ip;
 
 
         //========================================================
-        // READ BACK
+        // TEST 4
+        // Write RESULT
+        //========================================================
+
+        axi_write(
+            32'h0000000C,
+            32'h0000001E
+        );
+
+
+        //========================================================
+        // READ BACK AND CHECK
         //========================================================
 
         axi_read(
             32'h00000000,
             read_data
         );
+        check_value(read_data, 32'h00000001, "CONTROL");
 
         axi_read(
             32'h00000004,
             read_data
         );
+        check_value(read_data, 32'h0000000A, "DATA_A");
 
         axi_read(
             32'h00000008,
             read_data
         );
+        check_value(read_data, 32'h00000014, "DATA_B");
 
         axi_read(
             32'h0000000C,
             read_data
         );
+        check_value(read_data, 32'h0000001E, "RESULT");
 
 
         #100;
 
         $display("========================================");
-        $display("AXI4-LITE IP TEST FINISHED");
-        $display("========================================");
-
-        $finish;
+        if (errors == 0) begin
+            $display("RESULT: TEST PASSED");
+            $display("========================================");
+            $finish;
+        end else begin
+            $display("RESULT: TEST FAILED with %0d error(s)", errors);
+            $display("========================================");
+            $fatal(1, "self-check failed");
+        end
 
     end
 
@@ -300,4 +348,5 @@ initial begin
     $fsdbDumpSVA();
     $fsdbDumpMDA();
 end
+
 endmodule

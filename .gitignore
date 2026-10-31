@@ -1,0 +1,26 @@
+# Build and simulation products
+build/
+simv
+simv.*/
+csrc/
+*.daidir/
+verdiLog/
+novas.conf
+novas.rc
+novas_dump.log
+verdi_config_file
+ucli.key
+*.fsdb
+*.vpd
+*.vcd
+*.fst
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
