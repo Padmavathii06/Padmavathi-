@@ -50,6 +50,12 @@ XBAR_TB  := $(TB_DIR)/tb_axi_interconnect_4x4.sv
 AXIL_RTL := $(RTL_DIR)/interconnect/axi_lite_test_ip.v
 AXIL_TB  := $(TB_DIR)/tb_axi_lite_test_ip.sv
 
+IPU_RTL := $(RTL_DIR)/interconnect/ipu_config.v
+IPU_TB  := $(TB_DIR)/tb_ipu_config.sv
+
+AXI_APB_RTL := $(RTL_DIR)/interconnect/axi_apb_bridge.v $(RTL_DIR)/interconnect/apb_peripherals.v
+AXI_APB_TB  := $(TB_DIR)/tb_axi_apb_bridge.sv
+
 APB_RTL := $(RTL_DIR)/interconnect/ahb_apb_bridge.v $(RTL_DIR)/interconnect/apb_peripherals.v
 APB_TB  := $(TB_DIR)/tb_apb_peripherals.sv
 
@@ -62,7 +68,9 @@ BOOTROM_HEX := $(RTL_DIR)/soc/bootrom.hex
 abs = $(addprefix $(CURDIR)/,$(1))
 
 .PHONY: all gen interconnect axilite apb bootrom cru compile-cru run-cru compile-xbar run-xbar compile-axilite \
-        run-axilite compile-apb run-apb wave clean help compile-soc-full run-soc-full soc_full
+        run-axilite compile-apb run-apb wave clean help compile-soc-full run-soc-full soc_full \
+        compile-loopback run-loopback loopback compile-ipu run-ipu ipu \
+        compile-axi-apb run-axi-apb axi-apb c-test hex
 
 all: compile-xbar compile-axilite
 
@@ -179,7 +187,10 @@ wave:
 clean:
 	rm -rf $(BUILD_DIR)
 
-LOOPBACK_RTL := $(RTL_DIR)/interconnect/dma_controller.v $(RTL_DIR)/interconnect/ipu_config.v
+LOOPBACK_RTL := \
+	$(RTL_DIR)/interconnect/dma_controller.v \
+	$(RTL_DIR)/soc/axi_ram.v \
+	$(XBAR_RTL)
 LOOPBACK_TB  := $(TB_DIR)/tb_dma_ipu_loopback.sv
 
 compile-loopback:
@@ -193,12 +204,51 @@ run-loopback: compile-loopback
 
 loopback: run-loopback
 
+# -----------------------------------------------------------------------------
+# IPU configuration register block testbench
+# -----------------------------------------------------------------------------
+compile-ipu:
+	@mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
+		$(call abs,$(IPU_RTL)) $(call abs,$(IPU_TB)) \
+		-o simv_ipu
+
+run-ipu: compile-ipu
+	cd $(BUILD_DIR) && ./simv_ipu
+
+ipu: run-ipu
+
+# -----------------------------------------------------------------------------
+# AXI4-to-APB bridge testbench
+# -----------------------------------------------------------------------------
+compile-axi-apb:
+	@mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
+		$(call abs,$(AXI_APB_RTL)) $(call abs,$(AXI_APB_TB)) \
+		-o simv_axi_apb
+
+run-axi-apb: compile-axi-apb
+	cd $(BUILD_DIR) && ./simv_axi_apb
+
+axi-apb: run-axi-apb
+
+# -----------------------------------------------------------------------------
+# Software (requires RISC-V GCC toolchain)
+# -----------------------------------------------------------------------------
+c-test:
+	$(MAKE) -C sw
+
+hex: c-test
+	@echo "Generated HEX: sw/test.hex"
+
 help:
 	@echo "Targets:"
 	@echo "  make gen            Regenerate rtl/generated/axi_interconnect_wrap_4x4.v"
 	@echo "  make interconnect   Compile and run the 4x4 interconnect testbench"
 	@echo "                      (add FSDB=1 to dump build/dump.fsdb)"
 	@echo "  make axilite        Compile and run the AXI4-Lite test IP testbench"
+	@echo "  make ipu            Compile and run the IPU configuration testbench"
+	@echo "  make axi-apb        Compile and run the AXI4-to-APB bridge testbench"
 	@echo "  make wave           Open the latest dump.fsdb in Verdi"
 	@echo "  make clean          Remove $(BUILD_DIR)/"
 	@echo ""

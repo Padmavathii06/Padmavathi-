@@ -87,7 +87,16 @@ module soc_top #(
     output wire                    m3_rvalid, input  wire m3_rready
 );
 
-    wire rst = ~rst_l;
+    // Clock/reset unit: active-low rst_l in, sequenced active-high rst out.
+    wire rst;
+    cru #(.RESET_CYCLES(8)) u_cru (
+        .clk_in (clk),
+        .rst_l  (rst_l),
+        .clk    (),
+        .rst    (rst),
+        .rst_n  (),
+        .por_done()
+    );
 
     // Internal subordinate (interconnect -> RAM) wires
     wire [7:0] r0_awid;
@@ -274,7 +283,20 @@ module soc_top #(
 
     // Interconnect instance (generated 4x4 wrapper)
     // Manager ports connected to top-level manager ports.
-    axi_interconnect_wrap_4x4 u_xbar (
+    axi_interconnect_wrap_4x4 #(
+        .DATA_WIDTH   (DATA_WIDTH),
+        .ADDR_WIDTH   (ADDR_WIDTH),
+        .ID_WIDTH     (ID_WIDTH),
+        .M_REGIONS    (1),
+        .M00_BASE_ADDR(32'h0000_0000),
+        .M01_BASE_ADDR(32'h1000_0000),
+        .M02_BASE_ADDR(32'h2000_0000),
+        .M03_BASE_ADDR(32'h3000_0000),
+        .M00_ADDR_WIDTH(28),
+        .M01_ADDR_WIDTH(28),
+        .M02_ADDR_WIDTH(12),
+        .M03_ADDR_WIDTH(28)
+    ) u_xbar (
         // S00 CPU IFU
         .s00_axi_awid(m0_awid), .s00_axi_awaddr(m0_awaddr), .s00_axi_awlen(m0_awlen),
         .s00_axi_awsize(m0_awsize), .s00_axi_awburst(m0_awburst), .s00_axi_awlock(m0_awlock),
@@ -572,7 +594,7 @@ module soc_top #(
         .clk(clk), .rst(rst)
     );
 
-    axi_ram #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH)) u_ram1 (
+    boot_rom #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH), .MEM_WORDS(256), .INIT_FILE("../rtl/soc/bootrom.hex")) u_ram1 (        .clk(clk), .rst(rst),
         .s_axi_awid(r1_awid),
         .s_axi_awaddr(r1_awaddr),
         .s_axi_awlen(r1_awlen),
@@ -582,6 +604,7 @@ module soc_top #(
         .s_axi_awcache(r1_awcache),
         .s_axi_awprot(r1_awprot),
         .s_axi_awqos(r1_awqos),
+        .s_axi_awregion(r1_awregion),
         .s_axi_awuser(r1_awuser),
         .s_axi_awvalid(r1_awvalid),
         .s_axi_awready(r1_awready),
@@ -605,6 +628,7 @@ module soc_top #(
         .s_axi_arcache(r1_arcache),
         .s_axi_arprot(r1_arprot),
         .s_axi_arqos(r1_arqos),
+        .s_axi_arregion(r1_arregion),
         .s_axi_aruser(r1_aruser),
         .s_axi_arvalid(r1_arvalid),
         .s_axi_arready(r1_arready),
@@ -614,11 +638,11 @@ module soc_top #(
         .s_axi_rlast(r1_rlast),
         .s_axi_ruser(r1_ruser),
         .s_axi_rvalid(r1_rvalid),
-        .s_axi_rready(r1_rready),
-        .clk(clk), .rst(rst)
+        .s_axi_rready(r1_rready)
     );
 
-    axi_ram #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH)) u_ram2 (
+    ipu_config #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH), .ID_WIDTH(ID_WIDTH)) u_ram2 (
+        .clk(clk), .rst(rst),
         .s_axi_awid(r2_awid),
         .s_axi_awaddr(r2_awaddr),
         .s_axi_awlen(r2_awlen),
@@ -628,6 +652,7 @@ module soc_top #(
         .s_axi_awcache(r2_awcache),
         .s_axi_awprot(r2_awprot),
         .s_axi_awqos(r2_awqos),
+        .s_axi_awregion(r2_awregion),
         .s_axi_awuser(r2_awuser),
         .s_axi_awvalid(r2_awvalid),
         .s_axi_awready(r2_awready),
@@ -651,6 +676,7 @@ module soc_top #(
         .s_axi_arcache(r2_arcache),
         .s_axi_arprot(r2_arprot),
         .s_axi_arqos(r2_arqos),
+        .s_axi_arregion(r2_arregion),
         .s_axi_aruser(r2_aruser),
         .s_axi_arvalid(r2_arvalid),
         .s_axi_arready(r2_arready),
@@ -661,10 +687,24 @@ module soc_top #(
         .s_axi_ruser(r2_ruser),
         .s_axi_rvalid(r2_rvalid),
         .s_axi_rready(r2_rready),
-        .clk(clk), .rst(rst)
+        .ipu_done_irq(),
+        .ipu_err_irq()
     );
 
-    axi_ram #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH)) u_ram3 (
+    // AXI-to-APB bridge for the APB peripheral region (m03)
+    wire [31:0] apb_paddr;
+    wire [31:0] apb_pwdata;
+    wire        apb_pwrite;
+    wire        apb_psel;
+    wire        apb_penable;
+    wire [31:0] apb_prdata;
+    wire        apb_pready;
+    wire        apb_pslverr;
+    wire [7:0]  apb_gpio_out;
+    wire [7:0]  apb_gpio_dir;
+
+    axi_apb_bridge #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH), .ID_WIDTH(ID_WIDTH)) u_ram3 (
+        .clk(clk), .rst(rst),
         .s_axi_awid(r3_awid),
         .s_axi_awaddr(r3_awaddr),
         .s_axi_awlen(r3_awlen),
@@ -674,6 +714,7 @@ module soc_top #(
         .s_axi_awcache(r3_awcache),
         .s_axi_awprot(r3_awprot),
         .s_axi_awqos(r3_awqos),
+        .s_axi_awregion(r3_awregion),
         .s_axi_awuser(r3_awuser),
         .s_axi_awvalid(r3_awvalid),
         .s_axi_awready(r3_awready),
@@ -697,6 +738,7 @@ module soc_top #(
         .s_axi_arcache(r3_arcache),
         .s_axi_arprot(r3_arprot),
         .s_axi_arqos(r3_arqos),
+        .s_axi_arregion(r3_arregion),
         .s_axi_aruser(r3_aruser),
         .s_axi_arvalid(r3_arvalid),
         .s_axi_arready(r3_arready),
@@ -707,7 +749,38 @@ module soc_top #(
         .s_axi_ruser(r3_ruser),
         .s_axi_rvalid(r3_rvalid),
         .s_axi_rready(r3_rready),
-        .clk(clk), .rst(rst)
+        .m_apb_pclk(),
+        .m_apb_presetn(),
+        .m_apb_paddr(apb_paddr),
+        .m_apb_pwdata(apb_pwdata),
+        .m_apb_pwrite(apb_pwrite),
+        .m_apb_psel(apb_psel),
+        .m_apb_penable(apb_penable),
+        .m_apb_prdata(apb_prdata),
+        .m_apb_pready(apb_pready),
+        .m_apb_pslverr(apb_pslverr)
+    );
+
+    // APB peripheral subsystem behind the AXI-to-APB bridge
+    apb_peripherals u_apb (
+        .PCLK     (clk),
+        .PRESETn  (!rst),
+        .PADDR    (apb_paddr),
+        .PWDATA   (apb_pwdata),
+        .PWRITE   (apb_pwrite),
+        .PSEL     (apb_psel),
+        .PENABLE  (apb_penable),
+        .PRDATA   (apb_prdata),
+        .PREADY   (apb_pready),
+        .PSLVERR  (apb_pslverr),
+        .gpio_in  (8'd0),
+        .gpio_out (apb_gpio_out),
+        .gpio_dir (apb_gpio_dir),
+        .uart_irq (),
+        .spi_irq  (),
+        .gpio_irq (),
+        .timer_irq(),
+        .pic_irq_lines()
     );
 
 endmodule

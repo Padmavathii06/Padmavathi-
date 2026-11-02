@@ -66,6 +66,7 @@ module axi_ram #(
     reg [ADDR_WIDTH-1:0] aw_addr;
     reg [7:0]            aw_id;
     reg [DATA_WIDTH-1:0] w_data;
+    reg [DATA_WIDTH/8-1:0] w_strb;
 
     integer i;
     initial begin
@@ -84,6 +85,7 @@ module axi_ram #(
             aw_addr      <= {ADDR_WIDTH{1'b0}};
             aw_id        <= 8'd0;
             w_data       <= {DATA_WIDTH{1'b0}};
+            w_strb       <= {(DATA_WIDTH/8){1'b0}};
             s_axi_bvalid <= 1'b0;
             s_axi_bid    <= 8'd0;
             s_axi_bresp  <= 2'b00;
@@ -106,12 +108,17 @@ module axi_ram #(
             if (s_axi_wvalid && s_axi_wready) begin
                 w_done  <= 1'b1;
                 w_data  <= s_axi_wdata;
-                $display("RAM W hs data=%h time=%0t", s_axi_wdata, $time);
+                w_strb  <= s_axi_wstrb;
+                $display("RAM W hs data=%h strb=%h time=%0t", s_axi_wdata, s_axi_wstrb, $time);
             end
             // Commit write
             if (aw_done && w_done && !s_axi_bvalid) begin
                 $display("RAM COMMIT time=%0t", $time);
-                mem[aw_addr[2 +: 8]] <= w_data;
+                // Apply byte strobes
+                if (w_strb[0]) mem[aw_addr[2 +: 8]][7:0]   <= w_data[7:0];
+                if (w_strb[1]) mem[aw_addr[2 +: 8]][15:8]  <= w_data[15:8];
+                if (w_strb[2]) mem[aw_addr[2 +: 8]][23:16] <= w_data[23:16];
+                if (w_strb[3]) mem[aw_addr[2 +: 8]][31:24] <= w_data[31:24];
                 s_axi_bvalid <= 1'b1;
                 s_axi_bid    <= aw_id;
                 s_axi_bresp  <= 2'b00;

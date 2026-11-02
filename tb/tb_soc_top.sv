@@ -143,7 +143,7 @@ module tb_soc_top;
         m0_bready=1; m0_rready=1; m0_awvalid=0; m0_wvalid=0; m0_arvalid=0;
         repeat(5) @(posedge clk);
         rst_l=1'b1;
-        repeat(2) @(posedge clk);
+        repeat(12) @(posedge clk);
 
         $display("START SRAM WRITE");
         axi_write(32'h0000_0040, 32'hCAFEBABE);

@@ -144,3 +144,15 @@ Do not edit generated files by hand.
   `rtl/generated/axi_interconnect_wrap_4x9.v` are retained as historical
   reference only; they are not built by the Makefile.
 - Repository: https://github.com/Padmavathii06/Padmavathi-
+
+## Documentation
+- `docs/PROJECT_STATUS.md` — completed work, remaining work, risks, next steps.
+- `docs/ADDRESS_MAP.md` — AXI/APB register and memory map.
+- `docs/VERIFICATION.md` — test commands, expected outputs, verification status.
+
+## Dependencies (not all available in this environment)
+- Synopsys VCS + Verdi (college)
+- GNU Make
+- Python 3 with Jinja2 (for `make gen`)
+- RISC-V GCC toolchain (for software flow; not yet installed)
+- VeeR EL2 CPU RTL (not yet integrated; required for full SoC execution)
