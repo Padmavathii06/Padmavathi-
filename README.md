@@ -149,6 +149,7 @@ Do not edit generated files by hand.
 - `docs/PROJECT_STATUS.md` — completed work, remaining work, risks, next steps.
 - `docs/ADDRESS_MAP.md` — AXI/APB register and memory map.
 - `docs/VERIFICATION.md` — test commands, expected outputs, verification status.
+- `docs/CPU_INTEGRATION.md` — VeeR EL2 source, build, interface, and integration-gap notes.
 
 ## Dependencies (not all available in this environment)
 - Synopsys VCS + Verdi (college)

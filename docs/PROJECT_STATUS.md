@@ -69,7 +69,7 @@ The repository contains a substantial, self-consistent 4x4 AXI4 interconnect ver
 
 ### SoC top-level
 - [~] `rtl/soc/soc_top.v` — now instantiates CRU, the 4x4 interconnect with the documented base addresses, System SRAM (`axi_ram`), Boot ROM (`boot_rom`), IPU config (`ipu_config`), and the AXI-to-APB bridge + APB peripherals. All four manager ports are still exposed externally because no CPU RTL is integrated yet.
-- [ ] CPU integration — **blocked: no VeeR EL2 RTL in repository.**
+- [ ] CPU integration — **blocked on interface adaptation.** VeeR EL2 RTL has been inspected in a separate temporary directory; see `docs/CPU_INTEGRATION.md`. It is a 64-bit AXI RISC-V core with ICCM/DCCM and debug interfaces, and is not yet copied or wired into this repository.
 
 ### Software scaffold
 - [~] `sw/` contains a minimal RV32 C test, startup assembly, linker script, and Makefile.
