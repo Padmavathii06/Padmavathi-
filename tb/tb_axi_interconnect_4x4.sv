@@ -54,13 +54,16 @@ module tb_axi_interconnect_4x4;
     //   M01 Boot ROM  0x1000_0000 .. 0x1FFF_FFFF  (256 MiB)
     //   M02 IPU regs  0x2000_0000 .. 0x2000_0FFF  (4 KiB)
     //   M03 APB       0x3000_0000 .. 0x3FFF_FFFF  (256 MiB)
-    localparam [ADDR_WIDTH-1:0] BASE_ADDR [0:3] = '{
-        32'h0000_0000,
-        32'h1000_0000,
-        32'h2000_0000,
-        32'h3000_0000
-    };
-    localparam integer REGION_WIDTH [0:3] = '{28, 28, 12, 28};
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_0 = 32'h0000_0000;
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_1 = 32'h1000_0000;
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_2 = 32'h2000_0000;
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_3 = 32'h3000_0000;
+    localparam integer REGION_WIDTH_0 = 28;
+    localparam integer REGION_WIDTH_1 = 28;
+    localparam integer REGION_WIDTH_2 = 12;
+    localparam integer REGION_WIDTH_3 = 28;
+
+    reg [ADDR_WIDTH-1:0] BASE_ADDR [0:3];
 
     localparam [1:0] RESP_OKAY   = 2'b00;
     localparam [1:0] RESP_SLVERR = 2'b10;
@@ -191,14 +194,14 @@ module tb_axi_interconnect_4x4;
         .ARUSER_WIDTH (ARUSER_WIDTH),
         .RUSER_WIDTH  (RUSER_WIDTH),
         .M_REGIONS    (1),
-        .M00_BASE_ADDR(BASE_ADDR[0]),
-        .M01_BASE_ADDR(BASE_ADDR[1]),
-        .M02_BASE_ADDR(BASE_ADDR[2]),
-        .M03_BASE_ADDR(BASE_ADDR[3]),
-        .M00_ADDR_WIDTH(REGION_WIDTH[0]),
-        .M01_ADDR_WIDTH(REGION_WIDTH[1]),
-        .M02_ADDR_WIDTH(REGION_WIDTH[2]),
-        .M03_ADDR_WIDTH(REGION_WIDTH[3])
+        .M00_BASE_ADDR(BASE_ADDR_0),
+        .M01_BASE_ADDR(BASE_ADDR_1),
+        .M02_BASE_ADDR(BASE_ADDR_2),
+        .M03_BASE_ADDR(BASE_ADDR_3),
+        .M00_ADDR_WIDTH(REGION_WIDTH_0),
+        .M01_ADDR_WIDTH(REGION_WIDTH_1),
+        .M02_ADDR_WIDTH(REGION_WIDTH_2),
+        .M03_ADDR_WIDTH(REGION_WIDTH_3)
     ) dut (
         .clk(clk),
         .rst(rst),
@@ -584,8 +587,8 @@ module tb_axi_interconnect_4x4;
                 .RUSER_WIDTH  (RUSER_WIDTH),
                 .MEM_WORDS    (MEM_WORDS),
                 .ID           (gi),
-                .BASE_ADDR    (BASE_ADDR[gi]),
-                .REGION_WIDTH (REGION_WIDTH[gi])
+                .BASE_ADDR    ((gi == 0) ? BASE_ADDR_0 : (gi == 1) ? BASE_ADDR_1 : (gi == 2) ? BASE_ADDR_2 : BASE_ADDR_3),
+                .REGION_WIDTH ((gi == 0) ? REGION_WIDTH_0 : (gi == 1) ? REGION_WIDTH_1 : (gi == 2) ? REGION_WIDTH_2 : REGION_WIDTH_3)
             ) slave (
                 .clk(clk),
                 .rst(rst),
@@ -816,6 +819,10 @@ module tb_axi_interconnect_4x4;
 
     initial begin
         errors = 0;
+        BASE_ADDR[0] = BASE_ADDR_0;
+        BASE_ADDR[1] = BASE_ADDR_1;
+        BASE_ADDR[2] = BASE_ADDR_2;
+        BASE_ADDR[3] = BASE_ADDR_3;
 
         // Mirror of the memory contents in the subordinate models.
         for (m = 0; m < M_COUNT; m = m + 1) begin
@@ -992,12 +999,14 @@ module tb_axi_interconnect_4x4;
     // Waveform dump (optional: run with +fsdb)
     // =========================================================================
 
+`ifdef FSDB
     initial begin
         if ($test$plusargs("fsdb")) begin
             $fsdbDumpfile("dump.fsdb");
             $fsdbDumpvars(0, tb_axi_interconnect_4x4);
         end
     end
+`endif
 
 endmodule
 

@@ -145,13 +145,40 @@ module tb_soc_top;
         rst_l=1'b1;
         repeat(12) @(posedge clk);
 
-        $display("START SRAM WRITE");
+        $display("=================================================");
+        $display("TEST 1: SRAM write and read (0x0000_0040)");
+        $display("=================================================");
         axi_write(32'h0000_0040, 32'hCAFEBABE);
-        $display("SRAM WRITE DONE");
-        $display("START SRAM READ");
         axi_read(32'h0000_0040, rd);
-        $display("SRAM READ DONE %h", rd);
-        if (rd !== 32'hCAFEBABE) begin errors=errors+1; $display("SRAM mismatch %h", rd); end
+        $display("SRAM READ: exp CAFEBABE, got %h", rd);
+        if (rd !== 32'hCAFEBABE) begin errors=errors+1; $display("ERROR: SRAM mismatch %h", rd); end
+
+        $display("=================================================");
+        $display("TEST 2: Boot ROM read firmware (0x1000_0000)");
+        $display("=================================================");
+        axi_read(32'h1000_0000, rd);
+        $display("BOOT ROM word 0: %h", rd);
+        if (rd !== 32'hf0040117) begin errors=errors+1; $display("ERROR: Boot ROM word 0 mismatch: exp f0040117, got %h", rd); end
+
+        axi_read(32'h1000_0004, rd);
+        $display("BOOT ROM word 1: %h", rd);
+        if (rd !== 32'h00010113) begin errors=errors+1; $display("ERROR: Boot ROM word 1 mismatch: exp 00010113, got %h", rd); end
+
+        $display("=================================================");
+        $display("TEST 3: IPU config register write and read (0x2000_0008)");
+        $display("=================================================");
+        axi_write(32'h2000_0008, 32'd1920);
+        axi_read(32'h2000_0008, rd);
+        $display("IPU FRAME WIDTH: exp 00000780 (1920), got %h", rd);
+        if (rd !== 32'd1920) begin errors=errors+1; $display("ERROR: IPU FRAME WIDTH mismatch %h", rd); end
+
+        $display("=================================================");
+        $display("TEST 4: APB peripheral write and read (0x3000_0300 Timer LOAD)");
+        $display("=================================================");
+        axi_write(32'h3000_0300, 32'h0000_5678);
+        axi_read(32'h3000_0300, rd);
+        $display("APB Timer LOAD: exp 00005678, got %h", rd);
+        if (rd !== 32'h0000_5678) begin errors=errors+1; $display("ERROR: APB Timer LOAD mismatch %h", rd); end
 
         if (errors==0) begin $display("RESULT: TEST PASSED"); $finish; end
         else begin $display("RESULT: TEST FAILED %0d", errors); $fatal(1,"fail"); end

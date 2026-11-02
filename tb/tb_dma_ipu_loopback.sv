@@ -33,13 +33,14 @@ module tb_dma_ipu_loopback;
     // Region 1: 0x1000_0000 (Boot ROM)
     // Region 2: 0x2000_0000 (IPU Config)
     // Region 3: 0x3000_0000 (APB Peripherals)
-    localparam [ADDR_WIDTH-1:0] BASE_ADDR [0:3] = '{
-        32'h0000_0000,
-        32'h1000_0000,
-        32'h2000_0000,
-        32'h3000_0000
-    };
-    localparam integer REGION_WIDTH [0:3] = '{28, 28, 12, 28};
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_0 = 32'h0000_0000;
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_1 = 32'h1000_0000;
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_2 = 32'h2000_0000;
+    localparam [ADDR_WIDTH-1:0] BASE_ADDR_3 = 32'h3000_0000;
+    localparam integer REGION_WIDTH_0 = 28;
+    localparam integer REGION_WIDTH_1 = 28;
+    localparam integer REGION_WIDTH_2 = 12;
+    localparam integer REGION_WIDTH_3 = 28;
 
     // ── Clock and Reset ───────────────────────────────────────────────────────
     reg clk;
@@ -254,14 +255,14 @@ module tb_dma_ipu_loopback;
         .ARUSER_WIDTH (ARUSER_WIDTH),
         .RUSER_WIDTH  (RUSER_WIDTH),
         .M_REGIONS    (1),
-        .M00_BASE_ADDR(BASE_ADDR[0]),
-        .M01_BASE_ADDR(BASE_ADDR[1]),
-        .M02_BASE_ADDR(BASE_ADDR[2]),
-        .M03_BASE_ADDR(BASE_ADDR[3]),
-        .M00_ADDR_WIDTH(REGION_WIDTH[0]),
-        .M01_ADDR_WIDTH(REGION_WIDTH[1]),
-        .M02_ADDR_WIDTH(REGION_WIDTH[2]),
-        .M03_ADDR_WIDTH(REGION_WIDTH[3])
+        .M00_BASE_ADDR(BASE_ADDR_0),
+        .M01_BASE_ADDR(BASE_ADDR_1),
+        .M02_BASE_ADDR(BASE_ADDR_2),
+        .M03_BASE_ADDR(BASE_ADDR_3),
+        .M00_ADDR_WIDTH(REGION_WIDTH_0),
+        .M01_ADDR_WIDTH(REGION_WIDTH_1),
+        .M02_ADDR_WIDTH(REGION_WIDTH_2),
+        .M03_ADDR_WIDTH(REGION_WIDTH_3)
     ) u_interconnect (
         .clk(clk),
         .rst(rst),
@@ -925,8 +926,9 @@ module tb_dma_ipu_loopback;
         cfg_src_addr = 32'h0000_0010;
         cfg_dst_addr = 32'h0000_0110;
         cfg_len      = 16'd1;
+        @(negedge clk);
         cfg_start    = 1'b1;
-        @(posedge clk);
+        @(negedge clk);
         cfg_start    = 1'b0;
 
         // Wait for completion
@@ -970,16 +972,18 @@ module tb_dma_ipu_loopback;
         cfg_src_addr = 32'h0000_0020;
         cfg_dst_addr = 32'h0000_0120;
         cfg_len      = 16'd8;
+        @(negedge clk);
         cfg_start    = 1'b1;
-        @(posedge clk);
+        @(negedge clk);
         cfg_start    = 1'b0;
 
         // Verify busy rejection: pulsing cfg_start while busy should not restart/corrupt
-        @(posedge clk);
+        @(negedge clk);
         cfg_start    = 1'b1;
         cfg_len      = 16'd1; // Attempt spurious override
-        @(posedge clk);
+        @(negedge clk);
         cfg_start    = 1'b0;
+        cfg_len      = 16'd8; // restore
 
         // Wait for completion
         timeout_cnt = 0;
@@ -1029,8 +1033,9 @@ module tb_dma_ipu_loopback;
         cfg_src_addr = 32'h0000_0050;
         cfg_dst_addr = 32'h0000_0150;
         cfg_len      = 16'd1;
+        @(negedge clk);
         cfg_start    = 1'b1;
-        @(posedge clk);
+        @(negedge clk);
         cfg_start    = 1'b0;
 
         if (cfg_done !== 1'b0) begin
@@ -1067,8 +1072,9 @@ module tb_dma_ipu_loopback;
         cfg_src_addr = 32'hF000_0000;
         cfg_dst_addr = 32'h0000_0100;
         cfg_len      = 16'd1;
+        @(negedge clk);
         cfg_start    = 1'b1;
-        @(posedge clk);
+        @(negedge clk);
         cfg_start    = 1'b0;
 
         timeout_cnt = 0;

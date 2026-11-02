@@ -14,6 +14,7 @@ ucli.key
 *.vpd
 *.vcd
 *.fst
+*.vvp
 
 # Python
 __pycache__/
@@ -24,3 +25,11 @@ __pycache__/
 .idea/
 *.swp
 .DS_Store
+
+# Third-party vendor repositories and downloads
+vendor/
+
+# Software build artifacts
+sw/*.elf
+sw/*.bin
+sw/*.dis

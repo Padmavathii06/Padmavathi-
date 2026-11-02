@@ -1,5 +1,7 @@
 # Address Map — RISC-V VeeR EL2 SoC
 
+Last Updated: 2026-11-02
+
 Source of truth: `doc/interconnect_4x4_decision.md` and `doc/RISC-V_VeeR_EL2_SoC_Specification.doc`.
 
 ## AXI4 interconnect (4x4) regions
@@ -7,11 +9,17 @@ Source of truth: `doc/interconnect_4x4_decision.md` and `doc/RISC-V_VeeR_EL2_SoC
 | Subordinate port | Region base | Address width | Range | Target block |
 |---|---|---|---|---|
 | `m00` | `0x0000_0000` | 28 | `0x0000_0000` - `0x0FFF_FFFF` (256 MiB) | System SRAM (`axi_ram`) |
-| `m01` | `0x1000_0000` | 28 | `0x1000_0000` - `0x1FFF_FFFF` (256 MiB) | Boot ROM (`boot_rom`) |
+| `m01` | `0x1000_0000` | 28 | `0x1000_0000` - `0x1FFF_FFFF` (256 MiB) | Boot ROM (`boot_rom`) / CPU Reset Vector |
 | `m02` | `0x2000_0000` | 12 | `0x2000_0000` - `0x2000_0FFF` (4 KiB) | IPU configuration (`ipu_config`) |
 | `m03` | `0x3000_0000` | 28 | `0x3000_0000` - `0x3FFF_FFFF` (256 MiB) | AXI-to-APB bridge (`axi_apb_bridge`) |
 
-Unmapped addresses (e.g. `0x9000_0000`) return `DECERR` (`2'b11`) from the interconnect.
+Unmapped addresses (e.g. `0x9000_0000`) return `DECERR` (`2'b11`) from the interconnect fabric without deadlock.
+
+## CPU Reset Vector & Firmware
+
+- The CPU reset vector is configured to `0x1000_0000` (matching Boot ROM `m01`).
+- Boot ROM is initialized from `rtl/soc/bootrom.hex`, which contains the compiled RV32IMC startup image generated from `sw/`.
+- Startup execution writes observable signature `0xC0FFEE00` into System SRAM at `0x0000_0100`.
 
 ## IPU configuration registers (`0x2000_0000` base, word-aligned)
 
@@ -29,7 +37,7 @@ Unmapped addresses (e.g. `0x9000_0000`) return `DECERR` (`2'b11`) from the inter
 
 ## APB peripheral subsystem (`0x3000_0000` base via AXI-to-APB bridge)
 
-Word address within the APB region selects the peripheral by bits `[11:8]` (offsets below are the word offset from the APB base):
+Word address within the APB region selects the peripheral by bits `[11:8]` (word offsets from APB base):
 
 | Peripheral | Base word offset | Registers (word offsets) |
 |---|---|---|
@@ -41,11 +49,10 @@ Word address within the APB region selects the peripheral by bits `[11:8]` (offs
 
 APB peripherals are accessed through `axi_apb_bridge` at the full AXI addresses `0x3000_xxxx`.
 
-## DMA configuration (memory-mapped control)
+## Verification Status
 
-The current `dma_controller` is **not** an AXI subordinate; it exposes a configuration interface (`cfg_src_addr`, `cfg_dst_addr`, `cfg_len`, `cfg_start`) and status (`cfg_done`, `cfg_err`, `dma_irq`) that must be wired to registers by integration. No committed register map exists yet; this must be defined when the CPU is integrated. Do not invent addresses in software without updating this document.
-
-## Notes
-
-- `soc_top.v` in the current tree does **not** instantiate the documented subordinate map; it instantiates four SRAMs. This is a known gap (see `PROJECT_STATUS.md`).
-- AXI region widths in the interconnect testbench are 28/28/12/28 bits, matching this map.
+All four memory regions have been verified in the integrated SoC testbench (`tb/tb_soc_top.sv`):
+1. System SRAM write/read at `0x0000_0040` (OKAY response).
+2. Boot ROM read of words 0 and 1 at `0x1000_0000` (returns compiled firmware instructions).
+3. IPU configuration register write/read at `0x2000_0008` (returns programmed frame width).
+4. APB Timer LOAD register write/read at `0x3000_0300` (returns programmed load value).

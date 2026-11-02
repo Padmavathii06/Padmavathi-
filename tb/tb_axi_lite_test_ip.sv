@@ -342,11 +342,13 @@ module tb_axi_lite_test_ip;
     // FSDB
     //============================================================
 
+`ifdef FSDB
 initial begin
     $fsdbDumpfile("dump.fsdb");
     $fsdbDumpvars("+all");
     $fsdbDumpSVA();
     $fsdbDumpMDA();
 end
+`endif
 
 endmodule

@@ -594,7 +594,7 @@ module soc_top #(
         .clk(clk), .rst(rst)
     );
 
-    boot_rom #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH), .MEM_WORDS(256), .INIT_FILE("../rtl/soc/bootrom.hex")) u_ram1 (        .clk(clk), .rst(rst),
+    boot_rom #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH), .MEM_WORDS(256), .INIT_FILE("rtl/soc/bootrom.hex")) u_ram1 (        .clk(clk), .rst(rst),
         .s_axi_awid(r1_awid),
         .s_axi_awaddr(r1_awaddr),
         .s_axi_awlen(r1_awlen),

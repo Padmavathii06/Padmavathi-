@@ -3,6 +3,7 @@ ENTRY(_start)
 
 MEMORY
 {
+    ROM (rx)  : ORIGIN = 0x10000000, LENGTH = 64K
     RAM (rwx) : ORIGIN = 0x00000000, LENGTH = 256K
 }
 
@@ -11,15 +12,15 @@ SECTIONS
     .text : {
         *(.text.init)
         *(.text*)
-    } > RAM
+    } > ROM
 
     .rodata : {
         *(.rodata*)
-    } > RAM
+    } > ROM
 
     .data : {
         *(.data*)
-    } > RAM
+    } > RAM AT > ROM
 
     .bss : {
         *(.bss*)

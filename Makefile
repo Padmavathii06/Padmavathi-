@@ -9,8 +9,6 @@
 #   scripts/             generators and helper scripts
 # -----------------------------------------------------------------------------
 
-SHELL := /bin/bash
-
 # Tool locations. Override from the environment or on the command line, e.g.
 #   make VCS_HOME=/path/to/vcs VERDI_HOME=/path/to/verdi
 VCS_HOME   ?= /home/student/snps_tools_target/vcs/U-2023.03
@@ -22,7 +20,11 @@ export LD_LIBRARY_PATH := $(VCS_HOME)/lib:$(VCS_HOME)/linux64/lib:$(LD_LIBRARY_P
 
 VCS    ?= vcs
 VERDI  ?= verdi
-PYTHON ?= python3
+
+# Auto-detect tools if present in known Windows/Unix locations
+PYTHON ?= $(if $(wildcard C:/Users/kadan/AppData/Local/Programs/Python/Python312/python.exe),C:/Users/kadan/AppData/Local/Programs/Python/Python312/python.exe,python3)
+IVERILOG ?= $(if $(wildcard C:/Users/kadan/scoop/apps/iverilog/current/bin/iverilog.exe),C:/Users/kadan/scoop/apps/iverilog/current/bin/iverilog.exe,iverilog)
+VVP      ?= $(if $(wildcard C:/Users/kadan/scoop/apps/iverilog/current/bin/vvp.exe),C:/Users/kadan/scoop/apps/iverilog/current/bin/vvp.exe,vvp)
 
 BUILD_DIR ?= build
 RTL_DIR   := rtl
@@ -64,13 +66,26 @@ CRU_TB  := $(TB_DIR)/tb_cru_reset.sv
 BOOTROM_RTL := $(RTL_DIR)/soc/boot_rom.v
 BOOTROM_HEX := $(RTL_DIR)/soc/bootrom.hex
 
+SOC_RTL := $(RTL_DIR)/soc/soc_top.v $(RTL_DIR)/soc/axi_ram.v $(BOOTROM_RTL) $(IPU_RTL) $(AXI_APB_RTL) $(CRU_RTL) $(XBAR_RTL)
+SOC_TB  := $(TB_DIR)/tb_soc_top.sv
+
+DEBUG_RTL := $(RTL_DIR)/debug/jtag_dmi.v
+DEBUG_TB  := $(TB_DIR)/tb_jtag_dmi.sv
+
+LOOPBACK_RTL := \
+	$(RTL_DIR)/interconnect/dma_controller.v \
+	$(RTL_DIR)/soc/axi_ram.v \
+	$(XBAR_RTL)
+LOOPBACK_TB  := $(TB_DIR)/tb_dma_ipu_loopback.sv
+
 # VCS is run from inside $(BUILD_DIR), so feed it absolute source paths.
 abs = $(addprefix $(CURDIR)/,$(1))
 
 .PHONY: all gen interconnect axilite apb bootrom cru compile-cru run-cru compile-xbar run-xbar compile-axilite \
         run-axilite compile-apb run-apb wave clean help compile-soc-full run-soc-full soc_full \
         compile-loopback run-loopback loopback compile-ipu run-ipu ipu \
-        compile-axi-apb run-axi-apb axi-apb c-test hex
+        compile-axi-apb run-axi-apb axi-apb c-test hex \
+        sim-cru sim-axilite sim-ipu sim-axi-apb sim-apb sim-debug sim-loopback sim-xbar sim-soc sim-all
 
 all: compile-xbar compile-axilite
 
@@ -78,13 +93,13 @@ all: compile-xbar compile-axilite
 # Generated RTL
 # -----------------------------------------------------------------------------
 gen:
-	@mkdir -p $(GEN_DIR)
+	@mkdir -p $(GEN_DIR) 2>/dev/null || if not exist "$(GEN_DIR)" mkdir "$(GEN_DIR)"
 	$(PYTHON) $(SCRIPTS)/axi_interconnect_wrap.py -p 4 4 \
 		-n axi_interconnect_wrap_4x4 \
 		-o $(GEN_DIR)/axi_interconnect_wrap_4x4.v
 
 # -----------------------------------------------------------------------------
-# Interconnect testbench
+# VCS targets (for college Synopsys environment)
 # -----------------------------------------------------------------------------
 compile-xbar:
 	@mkdir -p $(BUILD_DIR)
@@ -97,9 +112,6 @@ run-xbar: compile-xbar
 
 interconnect: run-xbar
 
-# -----------------------------------------------------------------------------
-# AXI4-Lite test IP testbench
-# -----------------------------------------------------------------------------
 compile-axilite:
 	@mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
@@ -110,12 +122,6 @@ run-axilite: compile-axilite
 	cd $(BUILD_DIR) && ./simv_axilite
 
 axilite: run-axilite
-
-# -----------------------------------------------------------------------------
-# SoC top-level smoke test
-# -----------------------------------------------------------------------------
-SOC_RTL := $(RTL_DIR)/soc/soc_top.v $(RTL_DIR)/soc/axi_ram.v $(XBAR_RTL)
-SOC_TB  := $(TB_DIR)/tb_soc_top.sv
 
 compile-soc:
 	@mkdir -p $(BUILD_DIR)
@@ -128,28 +134,16 @@ run-soc: compile-soc
 
 soc: run-soc
 
-# -----------------------------------------------------------------------------
-# Full SoC-level verification (end-to-end)
-# -----------------------------------------------------------------------------
-SOC_FULL_RTL := $(SOC_RTL)
-SOC_FULL_TB  := $(SOC_TB)
-
 compile-soc-full:
 	@mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) -cm line+cond+fsm+tgl+branch \
-		$(call abs,$(SOC_FULL_RTL)) $(call abs,$(SOC_FULL_TB)) \
+		$(call abs,$(SOC_RTL)) $(call abs,$(SOC_TB)) \
 		-o simv_soc_full
 
 run-soc-full: compile-soc-full
 	cd $(BUILD_DIR) && ./simv_soc_full
 
 soc_full: run-soc-full
-
-# -----------------------------------------------------------------------------
-# JTAG/DMI debug module
-# -----------------------------------------------------------------------------
-DEBUG_RTL := $(RTL_DIR)/debug/jtag_dmi.v
-DEBUG_TB  := $(TB_DIR)/tb_jtag_dmi.sv
 
 compile-debug:
 	@mkdir -p $(BUILD_DIR)
@@ -162,9 +156,6 @@ run-debug: compile-debug
 
 debug: run-debug
 
-# -----------------------------------------------------------------------------
-# APB peripheral subsystem testbench
-# -----------------------------------------------------------------------------
 compile-apb:
 	@mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
@@ -175,23 +166,6 @@ run-apb: compile-apb
 	cd $(BUILD_DIR) && ./simv_apb
 
 apb: run-apb
-
-# -----------------------------------------------------------------------------
-# Waveform / cleanup
-# -----------------------------------------------------------------------------
-wave:
-	@test -f $(BUILD_DIR)/dump.fsdb || \
-		{ echo "No $(BUILD_DIR)/dump.fsdb - run a simulation first"; exit 1; }
-	cd $(BUILD_DIR) && $(VERDI) -ssf dump.fsdb &
-
-clean:
-	rm -rf $(BUILD_DIR)
-
-LOOPBACK_RTL := \
-	$(RTL_DIR)/interconnect/dma_controller.v \
-	$(RTL_DIR)/soc/axi_ram.v \
-	$(XBAR_RTL)
-LOOPBACK_TB  := $(TB_DIR)/tb_dma_ipu_loopback.sv
 
 compile-loopback:
 	@mkdir -p $(BUILD_DIR)
@@ -204,9 +178,6 @@ run-loopback: compile-loopback
 
 loopback: run-loopback
 
-# -----------------------------------------------------------------------------
-# IPU configuration register block testbench
-# -----------------------------------------------------------------------------
 compile-ipu:
 	@mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
@@ -218,9 +189,6 @@ run-ipu: compile-ipu
 
 ipu: run-ipu
 
-# -----------------------------------------------------------------------------
-# AXI4-to-APB bridge testbench
-# -----------------------------------------------------------------------------
 compile-axi-apb:
 	@mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
@@ -232,39 +200,6 @@ run-axi-apb: compile-axi-apb
 
 axi-apb: run-axi-apb
 
-# -----------------------------------------------------------------------------
-# Software (requires RISC-V GCC toolchain)
-# -----------------------------------------------------------------------------
-c-test:
-	$(MAKE) -C sw
-
-hex: c-test
-	@echo "Generated HEX: sw/test.hex"
-
-help:
-	@echo "Targets:"
-	@echo "  make gen            Regenerate rtl/generated/axi_interconnect_wrap_4x4.v"
-	@echo "  make interconnect   Compile and run the 4x4 interconnect testbench"
-	@echo "                      (add FSDB=1 to dump build/dump.fsdb)"
-	@echo "  make axilite        Compile and run the AXI4-Lite test IP testbench"
-	@echo "  make ipu            Compile and run the IPU configuration testbench"
-	@echo "  make axi-apb        Compile and run the AXI4-to-APB bridge testbench"
-	@echo "  make wave           Open the latest dump.fsdb in Verdi"
-	@echo "  make clean          Remove $(BUILD_DIR)/"
-	@echo ""
-	@echo "Tool overrides (environment or command line):"
-	@echo "  VCS_HOME=$(VCS_HOME)"
-	@echo "  VERDI_HOME=$(VERDI_HOME)"
-	@echo "  SNPSLMD_LICENSE_FILE=$(SNPSLMD_LICENSE_FILE)"
-
-# -----------------------------------------------------------------------------
-# CRU + boot ROM
-# -----------------------------------------------------------------------------
-bootrom:
-	@mkdir -p $(GEN_DIR)
-	@echo "Boot ROM image: $(BOOTROM_HEX)"
-	@test -f $(BOOTROM_HEX)
-
 compile-cru:
 	@mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(VCS) $(VCS_FLAGS) \
@@ -273,3 +208,105 @@ compile-cru:
 
 run-cru: compile-cru
 	cd $(BUILD_DIR) && ./simv_cru
+
+# -----------------------------------------------------------------------------
+# Icarus Verilog open-source simulation flow (cross-platform / local verification)
+# -----------------------------------------------------------------------------
+IVLOG_FLAGS := -g2012 -I $(RTL_DIR)/interconnect -I $(RTL_DIR)/soc
+
+sim-cru:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_cru_reset -o $(BUILD_DIR)/sim_cru.vvp $(CRU_RTL) $(CRU_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_cru.vvp
+
+sim-axilite:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_axi_lite_test_ip -o $(BUILD_DIR)/sim_axilite.vvp $(AXIL_RTL) $(AXIL_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_axilite.vvp
+
+sim-ipu:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_ipu_config -o $(BUILD_DIR)/sim_ipu.vvp $(IPU_RTL) $(IPU_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_ipu.vvp
+
+sim-axi-apb:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_axi_apb_bridge -o $(BUILD_DIR)/sim_axi_apb.vvp $(AXI_APB_RTL) $(AXI_APB_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_axi_apb.vvp
+
+sim-apb:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_apb_peripherals -o $(BUILD_DIR)/sim_apb.vvp $(APB_RTL) $(APB_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_apb.vvp
+
+sim-debug:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_jtag_dmi -o $(BUILD_DIR)/sim_debug.vvp $(DEBUG_RTL) $(DEBUG_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_debug.vvp
+
+sim-loopback:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_dma_ipu_loopback -o $(BUILD_DIR)/sim_loopback.vvp $(LOOPBACK_RTL) $(LOOPBACK_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_loopback.vvp
+
+sim-xbar:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_axi_interconnect_4x4 -o $(BUILD_DIR)/sim_xbar.vvp $(XBAR_RTL) $(XBAR_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_xbar.vvp
+
+sim-soc:
+	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_soc_top -o $(BUILD_DIR)/sim_soc.vvp $(SOC_RTL) $(SOC_TB)
+	"$(VVP)" $(BUILD_DIR)/sim_soc.vvp
+
+sim-all: sim-cru sim-axilite sim-ipu sim-axi-apb sim-apb sim-debug sim-loopback sim-xbar sim-soc
+	@echo "========================================================"
+	@echo "ALL 9 SIMULATIONS PASSED SUCCESSFULLY"
+	@echo "========================================================"
+
+# -----------------------------------------------------------------------------
+# Software flow (RISC-V cross-compilation & HEX generation)
+# -----------------------------------------------------------------------------
+c-test:
+	$(MAKE) -C sw PYTHON="$(PYTHON)"
+
+hex: c-test
+	@echo "Generated HEX: sw/test.hex"
+	@test -f sw/test.hex || if exist sw\test.hex exit 0
+
+bootrom: hex
+	@cp sw/test.hex $(BOOTROM_HEX) 2>/dev/null || copy /y sw\test.hex $(subst /,\,$(BOOTROM_HEX))
+	@echo "Boot ROM updated with compiled software hex"
+
+# -----------------------------------------------------------------------------
+# Waveform / cleanup
+# -----------------------------------------------------------------------------
+wave:
+	@test -f $(BUILD_DIR)/dump.fsdb || \
+		{ echo "No $(BUILD_DIR)/dump.fsdb - run a simulation first"; exit 1; }
+	cd $(BUILD_DIR) && $(VERDI) -ssf dump.fsdb &
+
+clean:
+	-rm -rf $(BUILD_DIR) 2>/dev/null || rd /s /q $(BUILD_DIR) 2>nul || true
+	$(MAKE) -C sw clean
+
+help:
+	@echo "RISC-V VeeR EL2 SoC Makefile Targets:"
+	@echo "  make sim-all        Run all 9 unit and integrated simulations with Icarus Verilog"
+	@echo "  make sim-soc        Run integrated full SoC simulation (SRAM, Boot ROM, IPU, APB)"
+	@echo "  make sim-xbar       Run 4x4 AXI interconnect crossbar simulation"
+	@echo "  make sim-cru        Run CRU reset controller simulation"
+	@echo "  make sim-axilite    Run AXI-Lite IP simulation"
+	@echo "  make sim-ipu        Run IPU configuration register block simulation"
+	@echo "  make sim-axi-apb    Run AXI-to-APB bridge simulation"
+	@echo "  make sim-apb        Run APB peripherals subsystem simulation"
+	@echo "  make sim-debug      Run JTAG DMI debug controller simulation"
+	@echo "  make sim-loopback   Run DMA + IPU crossbar loopback simulation"
+	@echo "  make c-test         Cross-compile RISC-V test firmware with rv32imc gcc"
+	@echo "  make hex            Generate word-addressed test.hex firmware image"
+	@echo "  make bootrom        Copy compiled test.hex to rtl/soc/bootrom.hex"
+	@echo "  make gen            Regenerate 4x4 interconnect RTL wrapper"
+	@echo "  make clean          Remove build products"
+	@echo ""
+	@echo "College Synopsys VCS Targets:"
+	@echo "  make run-xbar, run-soc, run-soc-full, run-cru, run-apb, run-ipu, run-loopback"

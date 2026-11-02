@@ -70,9 +70,22 @@ module boot_rom #(
     reg [DATA_WIDTH-1:0] mem [0:MEM_WORDS-1];
 
     integer i;
+    integer fp;
     initial begin
         for (i = 0; i < MEM_WORDS; i = i + 1) mem[i] = 32'h00000013; // nop
-        if (INIT_FILE != "") $readmemh(INIT_FILE, mem);
+        if (INIT_FILE != "") begin
+            fp = $fopen(INIT_FILE, "r");
+            if (fp != 0) begin
+                $fclose(fp);
+                $readmemh(INIT_FILE, mem);
+            end else begin
+                fp = $fopen({"../", INIT_FILE}, "r");
+                if (fp != 0) begin
+                    $fclose(fp);
+                    $readmemh({"../", INIT_FILE}, mem);
+                end
+            end
+        end
     end
 
     // Write side (SLVERR)

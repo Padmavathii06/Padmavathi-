@@ -1,64 +1,65 @@
 # CPU Integration Notes — VeeR EL2
 
-## Source and license
+Last Updated: 2026-11-02
 
-- Official repository: https://github.com/chipsalliance/Cores-VeeR-EL2
-- License: Apache-2.0 (`LICENSE` in the VeeR repository).
-- Dependencies (from VeeR README): Verilator 5+ (optional), RISC-V GCC 8.3+, Python 3.10+, Verible (lint), Perl (for `configs/veer.config`), and Git submodules (`git submodule update --init --recursive`).
+## 1. Upstream Source & Configuration
 
-## Reproducible obtain/build method
+- **Official Repository**: https://github.com/chipsalliance/Cores-VeeR-EL2
+- **License**: Apache-2.0 (`LICENSE` in VeeR repository)
+- **Local Clone**: `vendor/veer-el2/`
+- **Pinned Commit**: `fa00c8aadc4a077d78b277129c1badf90d881255`
+- **Configuration Snapshot**: `snapshots/default/` generated via:
+  ```bash
+  perl configs/veer.config -target=default -set=reset_vec=0x10000000 -set=dccm_enable=0 -set=iccm_enable=0
+  ```
+- **Generated Snapshot Products**:
+  - `snapshots/default/common_defines.vh`
+  - `snapshots/default/defines.h`
+  - `snapshots/default/el2_param.vh`
+  - `snapshots/default/el2_pdef.vh`
+  - `snapshots/default/link.ld`
+  - `snapshots/default/pic_map_auto.svh`
+  - `snapshots/default/whisper.json`
+  - `snapshots/default/perl_configs.pl`
 
-```bash
-git clone https://github.com/chipsalliance/Cores-VeeR-EL2.git
-cd Cores-VeeR-EL2
-git submodule update --init --recursive
-export RV_ROOT=$PWD
-# Generate a configuration (example: no ICCM/DCCM, using external AXI memories)
-perl configs/veer.config -snapshot=nolocal -set=dccm_enable=0 -set=iccm_enable=0
-```
+## 2. Interface Specifications & Architecture
 
-Generated files (including `snapshots/<name>/el2_param.vh`, `common_defines.vh`, `link.ld`, etc.) are required by the RTL and testbench flow. Do not copy VeeR RTL into this project without recording the exact commit and generated snapshot.
+VeeR EL2 core top module: `el2_veer_wrapper` (`vendor/veer-el2/design/el2_veer_wrapper.sv`).
 
-## VeeR EL2 interface summary (observed from `design/el2_veer_wrapper.sv`)
+- **Clock & Resets**:
+  - `clk`: Primary system clock.
+  - `rst_l`: Active-low core reset.
+  - `dbg_rst_l`: Active-low debug subsystem reset.
+- **Reset Vector**:
+  - `rst_vec[31:1]`: Pinned to `31'h0800_0000`, setting CPU entry address to `0x1000_0000` (SoC Boot ROM).
+- **Bus Protocols & Data Width**:
+  - Instruction Fetch Unit (IFU): AXI4 master, 64-bit data width (`ifu_axi_rdata[63:0]`).
+  - Load/Store Unit (LSU): AXI4 master, 64-bit data width (`lsu_axi_wdata[63:0]`, `lsu_axi_rdata[63:0]`).
+  - Sideband / Debug (SB): AXI4 master, 64-bit data width.
+  - System Bus DMA: AXI4 subordinate, 64-bit data width.
+- **Clock Enables**:
+  - `lsu_bus_clk_en`, `ifu_bus_clk_en`, `dbg_bus_clk_en`, `dma_bus_clk_en` tied to `1'b1` for 1:1 synchronous clocking.
+- **Interrupts**:
+  - `timer_int`, `soft_int`, `extintsrc_req[31:1]`.
 
-- Top module: `el2_veer_wrapper` (SystemVerilog).
-- Clock/reset: `clk`, `rst_l`, `dbg_rst_l`.
-- Reset vector is an input: `rst_vec[31:1]` (must be tied to a constant by the integrator).
-- NMI vector: `nmi_vec[31:1]`.
-- JTAG interface: `jtag_tck`, `jtag_tms`, `jtag_tdi`, `jtag_trst_n`, `jtag_tdo`, `jtag_tdoEn`.
-- Interrupts: `timer_int`, `soft_int`, `extintsrc_req[1:PIC_TOTAL_INT]`.
-- Local memory interfaces: dedicated ICCM and DCCM ports (can be disabled through configuration).
-- AXI4 masters (when built with `RV_BUILD_AXI4`):
-  - IFU AXI read (and unused write channel)
-  - LSU AXI read/write
-  - Sideband (SB) AXI read/write
-  - DMA AXI (slave-side in the wrapper, driven by external DMA)
-- AXI data width is **64 bits**; address width is 32 bits.
-- Optional AHB-Lite interface exists when built with `RV_BUILD_AHB_LITE`.
-- Memory export interface: `el2_mem_if.veer_sram_src` / `el2_mem_if.veer_icache_src`.
+## 3. Bus Width Gap & Adapter Integration
 
-## Compatibility gaps with the current SoC
+The SoC interconnect crossbar (`axi_interconnect_wrap_4x4`), System SRAM (`axi_ram`), Boot ROM (`boot_rom`), IPU config (`ipu_config`), and AXI-to-APB bridge (`axi_apb_bridge`) are all 32-bit AXI4 data paths.
 
-1. **Data width mismatch:** the current SoC interconnect, RAM, Boot ROM, IPU, and AXI-to-APB bridge are 32-bit. VeeR's AXI masters are 64-bit. Integration requires either a 64-bit SoC data path or AXI width converters.
-2. **Multiple masters:** VeeR exposes IFU, LSU, sideband, and DMA masters. The current 4x4 interconnect has exactly four manager ports, so a mapping is possible, but port roles and IDs must be revisited.
-3. **Local memories:** VeeR expects ICCM/DCCM memory interfaces unless disabled through configuration. A no-ICCM/no-DCCM configuration is possible, but must be generated and documented.
-4. **Reset vector:** must be tied to a constant. The current Boot ROM is at `0x1000_0000`; if the CPU reset vector is set there, the Boot ROM must contain valid instructions. The current `bootrom.hex` contains only NOP/RET.
-5. **Interrupts:** VeeR expects timer/software/external interrupt sources. The current APB PIC/Timer must be adapted or replaced.
-6. **JTAG/debug:** VeeR's debug interface differs from the project's existing `jtag_dmi.v`.
-7. **Clocking:** VeeR supports clock-ratio inputs for bus interfaces; the current CRU provides a single clock.
+To resolve the 64-bit to 32-bit mismatch:
+- Sourced genuine AXI width adapters: `vendor/verilog-axi/rtl/axi_adapter.v` (Alex Forencich, MIT license).
+- Implemented `rtl/soc/veer_cpu_wrapper.sv`:
+  - Instantiates `el2_veer_wrapper`.
+  - Connects VeeR's 64-bit IFU read channel through an `axi_adapter` (S_DATA=64, M_DATA=32) to 32-bit manager port `m0_ifu_*` (SoC Manager 0).
+  - Connects VeeR's 64-bit LSU read/write channels through an `axi_adapter` (S_DATA=64, M_DATA=32) to 32-bit manager port `m1_lsu_*` (SoC Manager 1).
+  - Ties debug, JTAG, scan, and MPC controls to safe active defaults.
 
-## Safe integration status
+## 4. Simulation Status & Technical Blocker
 
-- The VeeR RTL has been inspected in a separate temporary directory only.
-- It has **not** been copied into this repository.
-- It has **not** been wired into `soc_top.v`.
-- The current 32-bit AXI manager-port fallback in `soc_top.v` remains intact.
-
-## Recommended next integration steps
-
-1. Decide whether the SoC data width becomes 64-bit or whether AXI 64-to-32 width converters are added.
-2. Generate a pinned VeeR snapshot (`-snapshot=...`) and record the VeeR commit hash in this repository.
-3. Add VeeR as a Git submodule only after the commit and snapshot are chosen.
-4. Create a SystemVerilog wrapper that ties `rst_vec`, interrupts, JTAG, and memory interfaces, and adapts VeeR's 64-bit AXI masters to the SoC interconnect.
-5. Update `bootrom.hex` with a real reset handler and a C test linked at the chosen reset vector.
-6. Add a VCS target that compiles VeeR + generated snapshot + SoC RTL and runs the C test.
+- **Open-Source Local Flow (Icarus Verilog 14.0)**:
+  - Attempting to compile `el2_mem_if.sv` and VeeR SystemVerilog packages with Icarus Verilog yields:
+    `syntax error; sorry: interface modports / unpacked struct ports not supported.`
+  - VeeR EL2 relies heavily on SystemVerilog IEEE 1800-2017 language constructs (`interface ... modport`, `import el2_pkg::*`, package-scoped parameters) that Icarus Verilog cannot synthesize or simulate.
+- **Target College Flow (Synopsys VCS U-2023.03+)**:
+  - Synopsys VCS natively supports the full SystemVerilog IEEE 1800-2017 language standard including interface modports.
+  - The Makefile is configured with VCS and Verdi flags (`-full64 -sverilog -kdb -debug_access+all`) ready for execution in the college environment (`/home/student/snps_tools_target/vcs/U-2023.03`).
