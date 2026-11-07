@@ -13,28 +13,34 @@ CC      := $(CROSS)gcc
 OBJCOPY := $(CROSS)objcopy
 OBJDUMP := $(CROSS)objdump
 
-# VeeR EL2 is RV32IMC
-ARCH    ?= -march=rv32imc -mabi=ilp32
+# VeeR EL2 is RV32IMC (zicsr extension required for GCC 11+ CSR instructions)
+ARCH    ?= -march=rv32imc_zicsr -mabi=ilp32
 CFLAGS  ?= -O1 -g -ffreestanding -nostdlib -nostartfiles -Wall
 LDFLAGS ?= -T link.ld
 
 PYTHON  ?= python3
 
-all: test.hex test.dis
+TEST    ?= test
+TESTS   := test gpio_test timer_test uart_test spi_test pic_test ram_test bootrom_test ipu_test
 
-test.elf: start.S test.c link.ld
-	"$(CC)" $(ARCH) $(CFLAGS) $(LDFLAGS) start.S test.c -o $@
+all: $(TEST).hex $(TEST).dis
 
-test.bin: test.elf
+all-tests: $(addsuffix .hex,$(TESTS)) $(addsuffix .dis,$(TESTS))
+
+%.elf: start.S %.c link.ld
+	"$(CC)" $(ARCH) $(CFLAGS) $(LDFLAGS) start.S $*.c -o $@
+
+%.bin: %.elf
 	"$(OBJCOPY)" -j .text -j .rodata -O binary $< $@
 
-test.hex: test.bin
+%.hex: %.bin
 	$(PYTHON) ../scripts/bin2hex.py $< $@ 0
 
-test.dis: test.elf
+%.dis: %.elf
 	"$(OBJDUMP)" -d $< > $@
 
 clean:
-	-@del /f /q test.elf test.bin test.hex test.dis 2>nul || rm -f test.elf test.bin test.hex test.dis
+	-@del /f /q *.elf *.bin *.hex *.dis 2>nul || rm -f *.elf *.bin *.hex *.dis
 
-.PHONY: all clean
+.PHONY: all all-tests clean
+.SECONDARY:

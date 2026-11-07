@@ -69,10 +69,30 @@ make bootrom
 
 Compiles `sw/test.c` + `sw/start.S` with RV32IMC GCC and updates `rtl/soc/bootrom.hex`.
 
+To compile all modular test firmware images:
+```bash
+make -C sw all-tests
+```
+Modular tests provided under `sw/`:
+- `sw/test.c`: Comprehensive end-to-end SoC verification (all 8 subsystems)
+- `sw/gpio_test.c`: APB GPIO register R/W verification (DIR=0xFF, OUT=0x3C)
+- `sw/timer_test.c`: APB Timer register configuration & load verification (LOAD=5)
+- `sw/uart_test.c`: APB UART TXDATA register write/read-back (0x55)
+- `sw/spi_test.c`: APB SPI TXDATA register write/read-back (0xAA)
+- `sw/pic_test.c`: APB PIC interrupt mask register write/read-back (0x1F)
+- `sw/ram_test.c`: System SRAM read/write and data integrity verification
+- `sw/bootrom_test.c`: Boot ROM reset vector content verification
+- `sw/ipu_test.c`: IPU configuration registers verification (1920x1080)
+- `sw/soc_regs.h`: Memory-mapped register definitions and MRAC CSR helper
+
 ### College VCS Environment Targets
 
 ```bash
+make sim-veer-cpu        # Real VeeR EL2 CPU boot & firmware execution (writes 0xC0FFEE00)
+make run-soc             # Integrated SoC fabric simulation
 make run-soc-full        # Full SoC coverage simulation
 make run-xbar            # Interconnect crossbar simulation
 make wave                # Open dump.fsdb in Verdi
 ```
+
+> **Note on Watchdog**: There is no dedicated hardware Watchdog Timer peripheral in this SoC design. The watchdog timeout in `tb/tb_soc_veer_cpu.sv` is solely a simulation safety mechanism.

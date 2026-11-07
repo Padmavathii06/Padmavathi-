@@ -17,10 +17,13 @@
 
 `timescale 1ns / 1ps
 
+import el2_pkg::*;
+
 module veer_cpu_wrapper #(
     parameter DATA_WIDTH = 32,
     parameter ADDR_WIDTH = 32,
-    parameter ID_WIDTH   = 8
+    parameter ID_WIDTH   = 8,
+    `include "el2_param.vh"
 ) (
     input  wire                   clk,
     input  wire                   rst_l,
@@ -164,8 +167,70 @@ module veer_cpu_wrapper #(
     localparam [31:1] RESET_VECTOR = 31'h0800_0000;
 
     // Memory export interface instance required by el2_veer_wrapper
-    el2_mem_if el2_icache_export();
     el2_mem_if el2_mem_export();
+
+`include "icache_macros.svh"
+
+    // Tie-off unused non-packed ICache signals
+    `EL2_TIE_OFF_NON_PACKED
+
+    // DCCM SRAM Banks (4 banks of 4096x39)
+    wire [38:0] dccm_bank_fdout [pt.DCCM_NUM_BANKS-1:0];
+    for (genvar di=0; di<pt.DCCM_NUM_BANKS; di++) begin: gen_dccm
+        ram_4096x39 dccm_bank (
+            .CLK  (el2_mem_export.clk),
+            .ME   (el2_mem_export.dccm_clken[di]),
+            .WE   (el2_mem_export.dccm_wren_bank[di]),
+            .ADR  (el2_mem_export.dccm_addr_bank[di]),
+            .D    ({el2_mem_export.dccm_wr_ecc_bank[di], el2_mem_export.dccm_wr_data_bank[di]}),
+            .Q    (dccm_bank_fdout[di]),
+            .ROP  (),
+            .TEST1(1'b0),
+            .RME  (1'b0),
+            .RM   (4'b0000),
+            .LS   (1'b0),
+            .DS   (1'b0),
+            .SD   (1'b0),
+            .TEST_RNM(1'b0),
+            .BC1  (1'b0),
+            .BC2  (1'b0)
+        );
+        assign el2_mem_export.dccm_bank_dout[di] = dccm_bank_fdout[di][31:0];
+        assign el2_mem_export.dccm_bank_ecc[di]  = dccm_bank_fdout[di][38:32];
+    end
+
+    // ICCM SRAM Banks (4 banks of 4096x39)
+    wire [38:0] iccm_bank_fdout [pt.ICCM_NUM_BANKS-1:0];
+    for (genvar ii=0; ii<pt.ICCM_NUM_BANKS; ii++) begin: gen_iccm
+        ram_4096x39 iccm_bank (
+            .CLK  (el2_mem_export.clk),
+            .ME   (el2_mem_export.iccm_clken[ii]),
+            .WE   (el2_mem_export.iccm_wren_bank[ii]),
+            .ADR  (el2_mem_export.iccm_addr_bank[ii]),
+            .D    ({el2_mem_export.iccm_bank_wr_ecc[ii], el2_mem_export.iccm_bank_wr_data[ii]}),
+            .Q    (iccm_bank_fdout[ii]),
+            .ROP  (),
+            .TEST1(1'b0),
+            .RME  (1'b0),
+            .RM   (4'b0000),
+            .LS   (1'b0),
+            .DS   (1'b0),
+            .SD   (1'b0),
+            .TEST_RNM(1'b0),
+            .BC1  (1'b0),
+            .BC2  (1'b0)
+        );
+        assign el2_mem_export.iccm_bank_dout[ii] = iccm_bank_fdout[ii][31:0];
+        assign el2_mem_export.iccm_bank_ecc[ii]  = iccm_bank_fdout[ii][38:32];
+    end
+
+    // ICache Data Packed SRAMs (2 banks of 512x142)
+    for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY
+        `EL2_PACKED_IC_DATA_SRAM(512,142,71,k)
+    end
+
+    // ICache Tag Packed SRAM (1 bank of 128x52)
+    `EL2_IC_TAG_PACKED_SRAM(128,52)
 
     // Instantiate Genuine VeeR EL2 core
     el2_veer_wrapper u_cpu (
@@ -253,8 +318,8 @@ module veer_cpu_wrapper #(
         .dma_bus_clk_en         (1'b1),
 
         // Interfaces & Interrupts
-        .el2_icache_export      (el2_icache_export),
-        .el2_mem_export         (el2_mem_export),
+        .el2_icache_export      (el2_mem_export.veer_icache_src),
+        .el2_mem_export         (el2_mem_export.veer_sram_src),
         .timer_int              (timer_int),
         .soft_int               (soft_int),
         .extintsrc_req          (extintsrc_req),
@@ -273,7 +338,54 @@ module veer_cpu_wrapper #(
         .i_cpu_halt_req         (1'b0),
         .i_cpu_run_req          (1'b0),
         .scan_mode              (1'b0),
-        .mbist_mode             (1'b0)
+        .mbist_mode             (1'b0),
+
+        // Tie-offs for unused IFU write channel
+        .ifu_axi_awready        (1'b0),
+        .ifu_axi_wready         (1'b0),
+        .ifu_axi_bvalid         (1'b0),
+        .ifu_axi_bresp          (2'b00),
+        .ifu_axi_bid            ('0),
+
+        // Tie-offs for unused System Bus (SB) AXI port
+        .sb_axi_awready         (1'b0),
+        .sb_axi_wready          (1'b0),
+        .sb_axi_bvalid          (1'b0),
+        .sb_axi_bresp           (2'b00),
+        .sb_axi_bid             ('0),
+        .sb_axi_arready         (1'b0),
+        .sb_axi_rvalid          (1'b0),
+        .sb_axi_rid             ('0),
+        .sb_axi_rdata           (64'd0),
+        .sb_axi_rresp           (2'b00),
+        .sb_axi_rlast           (1'b0),
+
+        // Tie-offs for unused DMA slave AXI port
+        .dma_axi_awvalid        (1'b0),
+        .dma_axi_awid           ('0),
+        .dma_axi_awaddr         (32'd0),
+        .dma_axi_awsize         (3'd0),
+        .dma_axi_awprot         (3'd0),
+        .dma_axi_awlen          (8'd0),
+        .dma_axi_awburst        (2'd0),
+        .dma_axi_wvalid         (1'b0),
+        .dma_axi_wdata          (64'd0),
+        .dma_axi_wstrb          (8'd0),
+        .dma_axi_wlast          (1'b0),
+        .dma_axi_bready         (1'b0),
+        .dma_axi_arvalid        (1'b0),
+        .dma_axi_arid           ('0),
+        .dma_axi_araddr         (32'd0),
+        .dma_axi_arsize         (3'd0),
+        .dma_axi_arprot         (3'd0),
+        .dma_axi_arlen          (8'd0),
+        .dma_axi_arburst        (2'd0),
+        .dma_axi_rready         (1'b0),
+
+        // DMI Uncore tie-offs
+        .dmi_core_enable        (1'b1),
+        .dmi_uncore_enable      (1'b0),
+        .dmi_uncore_rdata       (32'd0)
     );
 
     // =========================================================================

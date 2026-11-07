@@ -1,0 +1,12 @@
+../../rtl/interconnect/apb_peripherals.v
+../tb/uart_if.sv
+../tb/uart_transaction.sv
+../tb/uart_sequence.sv
+../tb/uart_sequencer.sv
+../tb/uart_driver.sv
+../tb/uart_monitor.sv
+../tb/uart_agent.sv
+../tb/uart_scoreboard.sv
+../tb/uart_env.sv
+../tb/uart_test.sv
+../tb/tb_top.sv

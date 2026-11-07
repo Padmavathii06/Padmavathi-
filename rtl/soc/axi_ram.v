@@ -74,9 +74,13 @@ module axi_ram #(
             mem[i] = 32'hA000_0000 + i;
     end
 
+    reg [ADDR_WIDTH-1:0] r_addr;
+    reg [7:0]            r_len;
+    reg                  r_busy;
+
     assign s_axi_awready = !aw_done && !s_axi_bvalid;
     assign s_axi_wready  = !w_done  && !s_axi_bvalid;
-    assign s_axi_arready = !s_axi_rvalid;
+    assign s_axi_arready = !r_busy && !s_axi_rvalid;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -90,6 +94,9 @@ module axi_ram #(
             s_axi_bid    <= 8'd0;
             s_axi_bresp  <= 2'b00;
             s_axi_buser  <= 1'b0;
+            r_busy       <= 1'b0;
+            r_addr       <= {ADDR_WIDTH{1'b0}};
+            r_len        <= 8'd0;
             s_axi_rvalid <= 1'b0;
             s_axi_rid    <= 8'd0;
             s_axi_rdata  <= {DATA_WIDTH{1'b0}};
@@ -133,10 +140,31 @@ module axi_ram #(
                 s_axi_rid    <= s_axi_arid;
                 s_axi_rdata  <= mem[s_axi_araddr[2 +: 8]];
                 s_axi_rresp  <= 2'b00;
-                s_axi_rlast  <= 1'b1;
                 s_axi_rvalid <= 1'b1;
+                if (s_axi_arlen == 8'd0) begin
+                    s_axi_rlast <= 1'b1;
+                    r_busy      <= 1'b0;
+                end else begin
+                    s_axi_rlast <= 1'b0;
+                    r_addr      <= s_axi_araddr + 32'd4;
+                    r_len       <= s_axi_arlen - 8'd1;
+                    r_busy      <= 1'b1;
+                end
+            end else if (r_busy && s_axi_rvalid && s_axi_rready) begin
+                s_axi_rdata  <= mem[r_addr[2 +: 8]];
+                s_axi_rresp  <= 2'b00;
+                s_axi_rvalid <= 1'b1;
+                r_addr       <= r_addr + 32'd4;
+                if (r_len == 8'd0) begin
+                    s_axi_rlast <= 1'b1;
+                    r_busy      <= 1'b0;
+                end else begin
+                    s_axi_rlast <= 1'b0;
+                    r_len       <= r_len - 8'd1;
+                end
             end else if (s_axi_rvalid && s_axi_rready) begin
                 s_axi_rvalid <= 1'b0;
+                s_axi_rlast  <= 1'b0;
             end
         end
     end

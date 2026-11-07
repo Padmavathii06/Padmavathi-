@@ -85,7 +85,8 @@ abs = $(addprefix $(CURDIR)/,$(1))
         run-axilite compile-apb run-apb wave clean help compile-soc-full run-soc-full soc_full \
         compile-loopback run-loopback loopback compile-ipu run-ipu ipu \
         compile-axi-apb run-axi-apb axi-apb c-test hex \
-        sim-cru sim-axilite sim-ipu sim-axi-apb sim-apb sim-debug sim-loopback sim-xbar sim-soc sim-all
+        sim-cru sim-axilite sim-ipu sim-axi-apb sim-apb sim-debug sim-loopback sim-xbar sim-soc sim-all \
+        compile-veer-cpu run-veer-cpu sim-veer-cpu
 
 all: compile-xbar compile-axilite
 
@@ -93,7 +94,7 @@ all: compile-xbar compile-axilite
 # Generated RTL
 # -----------------------------------------------------------------------------
 gen:
-	@mkdir -p $(GEN_DIR) 2>/dev/null || if not exist "$(GEN_DIR)" mkdir "$(GEN_DIR)"
+	@mkdir -p $(GEN_DIR)
 	$(PYTHON) $(SCRIPTS)/axi_interconnect_wrap.py -p 4 4 \
 		-n axi_interconnect_wrap_4x4 \
 		-o $(GEN_DIR)/axi_interconnect_wrap_4x4.v
@@ -144,6 +145,17 @@ run-soc-full: compile-soc-full
 	cd $(BUILD_DIR) && ./simv_soc_full
 
 soc_full: run-soc-full
+
+compile-veer-cpu: bootrom
+	@mkdir -p $(BUILD_DIR)
+	$(VCS) -full64 -sverilog +define+RV_OPENSOURCE +define+GTLSIM +vcs+initreg+random \
+		-timescale=1ns/10ps +libext+.v -debug_access+all -kdb -P $(NOVAS_TAB) $(NOVAS_PLI) +define+FSDB \
+		-f build/soc_veer_cpu.f -o $(BUILD_DIR)/simv_soc_veer_cpu
+
+run-veer-cpu: compile-veer-cpu
+	./$(BUILD_DIR)/simv_soc_veer_cpu +vcs+initreg+0
+
+sim-veer-cpu: run-veer-cpu
 
 compile-debug:
 	@mkdir -p $(BUILD_DIR)
@@ -215,47 +227,47 @@ run-cru: compile-cru
 IVLOG_FLAGS := -g2012 -I $(RTL_DIR)/interconnect -I $(RTL_DIR)/soc
 
 sim-cru:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_cru_reset -o $(BUILD_DIR)/sim_cru.vvp $(CRU_RTL) $(CRU_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_cru.vvp
 
 sim-axilite:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_axi_lite_test_ip -o $(BUILD_DIR)/sim_axilite.vvp $(AXIL_RTL) $(AXIL_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_axilite.vvp
 
 sim-ipu:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_ipu_config -o $(BUILD_DIR)/sim_ipu.vvp $(IPU_RTL) $(IPU_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_ipu.vvp
 
 sim-axi-apb:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_axi_apb_bridge -o $(BUILD_DIR)/sim_axi_apb.vvp $(AXI_APB_RTL) $(AXI_APB_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_axi_apb.vvp
 
 sim-apb:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_apb_peripherals -o $(BUILD_DIR)/sim_apb.vvp $(APB_RTL) $(APB_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_apb.vvp
 
 sim-debug:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_jtag_dmi -o $(BUILD_DIR)/sim_debug.vvp $(DEBUG_RTL) $(DEBUG_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_debug.vvp
 
 sim-loopback:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_dma_ipu_loopback -o $(BUILD_DIR)/sim_loopback.vvp $(LOOPBACK_RTL) $(LOOPBACK_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_loopback.vvp
 
 sim-xbar:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_axi_interconnect_4x4 -o $(BUILD_DIR)/sim_xbar.vvp $(XBAR_RTL) $(XBAR_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_xbar.vvp
 
 sim-soc:
-	@mkdir -p $(BUILD_DIR) 2>/dev/null || if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+	@mkdir -p $(BUILD_DIR)
 	"$(IVERILOG)" $(IVLOG_FLAGS) -s tb_soc_top -o $(BUILD_DIR)/sim_soc.vvp $(SOC_RTL) $(SOC_TB)
 	"$(VVP)" $(BUILD_DIR)/sim_soc.vvp
 
@@ -272,10 +284,10 @@ c-test:
 
 hex: c-test
 	@echo "Generated HEX: sw/test.hex"
-	@test -f sw/test.hex || if exist sw\test.hex exit 0
+	@test -f sw/test.hex
 
 bootrom: hex
-	@cp sw/test.hex $(BOOTROM_HEX) 2>/dev/null || copy /y sw\test.hex $(subst /,\,$(BOOTROM_HEX))
+	@cp -f sw/test.hex $(BOOTROM_HEX)
 	@echo "Boot ROM updated with compiled software hex"
 
 # -----------------------------------------------------------------------------
